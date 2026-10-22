@@ -89,6 +89,11 @@ details.bk>summary{padding:8px 10px;cursor:pointer;font-weight:600;display:flex;
 /* 計時 */
 .timer{font-size:clamp(34px,8vw,64px);font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.06em;text-align:center;border:2px solid var(--line);border-radius:8px;background:var(--panel);padding:6px 0;margin-top:12px}
 .timer.low{background:var(--warn);color:#fff}
+.timer.paused{opacity:.55}
+.timer.done{animation:tmblink .6s ease-in-out 5}
+@keyframes tmblink{50%{transform:scale(1.04);filter:brightness(1.25)}}
+.tmpanel .row{align-items:center}
+.tmpanel label{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
 .story{background:var(--panel);border:2px solid var(--line);border-radius:8px;padding:16px;text-align:center}
 .story .lab{font-size:12px;letter-spacing:.14em;color:var(--mute);margin-bottom:6px}
 .story .s{font-size:clamp(24px,5vw,38px);font-weight:700;line-height:1.4}
@@ -146,7 +151,7 @@ const T = {
   storyGo: ['出題（抽圖片＋送出句子）', '出题（抽图片＋送出句子）'],
   storyImg: ['只換圖片', '只换图片'], storyNeed: ['請先輸入句子', '请先输入句子'],
   timerLab: ['倒數計時', '倒数计时'], timerOff: ['不計時', '不计时'], min: ['分鐘', '分钟'],
-  timerStart: ['開始倒數', '开始倒数'], timerStop: ['停止', '停止'], timeUp: ['時間到！', '时间到！'],
+  timerStart: ['開始倒數', '开始倒数'], tmStart: ['開始', '开始'], tmPause: ['暫停', '暂停'], tmResume: ['繼續', '继续'], tmRestart: ['重來', '重来'], tmAuto: ['抽選後自動開始', '抽选后自动开始'], tmDown: ['倒數', '倒数'], tmUp: ['碼表（往上數）', '码表（往上数）'], secU: ['秒', '秒'], timerStop: ['停止', '停止'], timeUp: ['時間到！', '时间到！'],
   storyAid: ['故事提示：誰？在哪裡？發生什麼事？後來怎麼了？', '故事提示：谁？在哪里？发生什么事？后来怎么了？'],
   setRange: ['抽選範圍', '抽选范围'], pool: ['個語法點', '个语法点'], imgsN: ['張圖片', '张图片'],
   setLevel: ['程度（可多選）', '程度（可多选）'],
@@ -166,7 +171,7 @@ const SC = () => (S.lang === 'sc' ? 1 : 0);
 const t = (k) => (T[k] ? T[k][SC()] : k);
 
 /* ================= 設定（存在這台裝置） ================= */
-const DEF = { lang: 'tc', books: [1], excluded: [], customs: [], imgsOff: [], showHints: true, storyTimer: 120, noRepeat: true };
+const DEF = { lang: 'tc', books: [1], excluded: [], customs: [], imgsOff: [], showHints: true, storyTimer: 120, timerSel: 'd120', autoTimer: false, noRepeat: true };
 function loadS() { try { return Object.assign({}, DEF, JSON.parse(localStorage.getItem(LS_KEY) || '{}')); } catch (e) { return Object.assign({}, DEF); } }
 let S = loadS();
 function saveS() { try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) {} }
@@ -245,15 +250,14 @@ let role = null;                // 'teacher' | 'student'
 let tab = 'sentence';
 let room = null;                // 老師：{code}
 let roomBusy = false;
-let cur = { mode: 'sentence', img: null, g: null, story: null, timerSec: null, seq: 0 };
+let cur = { mode: 'sentence', img: null, g: null, story: null, tm: null, seq: 0 };
 let storyDraft = '';
-let timerPick = null;           // 老師選的倒數秒數
 let rolling = false;
 let usedG = new Set();
 let lastImg = null;
 let teacherDataReady = false;
 let sUnsub = null, sState = null, sCode = null, sErr = '';
-let clock = { end: 0, sec: 0, h: null, lastSeq: -1 };
+let clock = { k: null, total: 0, base: 0, t0: 0, h: null, lastN: -1, lastSeq: -1 };
 
 const IMGS = () => window.SD_IMAGES || [];
 const imgById = (id) => IMGS().find((i) => i.id === id);
@@ -317,10 +321,24 @@ function gramCard(g, waitKey) {
   if (!g) return '<div class="card gram"><div class="lab">' + t('lblGram') + '</div><div class="body"><div class="empty">' + t(waitKey) + '</div></div></div>';
   return '<div class="card gram"><div class="lab">' + t('lblGram') + '</div><div class="body"><div class="gtitle">' + esc(g.title) + '</div><div class="gtag">' + esc(g.tag) + '</div></div></div>';
 }
-function timerBox(sec) {
-  if (sec == null) return '';
-  const m = Math.floor(sec / 60), s = sec % 60;
-  return '<div class="timer' + (sec <= 10 && sec > 0 ? ' low' : '') + (sec === 0 ? ' low' : '') + '" id="timerBox">' + (sec === 0 ? t('timeUp') : String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0')) + '</div>';
+function fmtT(sec) { return String(Math.floor(sec / 60)).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0'); }
+function timerBox() {
+  const v = tmNow(); if (v == null) return '';
+  const up = clock.k === 'u', done = !up && v === 0, low = !up && v <= 10;
+  return '<div class="timer' + (low ? ' low' : '') + (done ? ' done' : '') + (clock.t0 || done ? '' : ' paused') + '" id="timerBox">' + (done ? t('timeUp') : fmtT(v)) + (clock.t0 || done ? '' : ' ⏸') + '</div>';
+}
+const TM_OPTS = [['d30', 30], ['d60', 60], ['d120', 120], ['d180', 180], ['d300', 300]];
+function tmOptLabel(o) { return o[1] >= 60 ? t('tmDown') + ' ' + o[1] / 60 + ' ' + t('min') : t('tmDown') + ' ' + o[1] + ' ' + t('secU'); }
+function timerPanel() {
+  const sel = S.timerSel || 'd120';
+  const opts = [['off', t('timerOff')]].concat(TM_OPTS.map((o) => [o[0], tmOptLabel(o)])).concat([['u', t('tmUp')]])
+    .map((o) => '<option value="' + o[0] + '"' + (sel === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('');
+  const active = !!clock.k, v = tmNow(), done = clock.k === 'd' && v === 0, running = !!clock.t0;
+  const btns = !active
+    ? '<button class="btn" data-a="tmstart">' + t('tmStart') + '</button>'
+    : (done ? '' : '<button class="btn" data-a="tmpause">' + (running ? t('tmPause') : t('tmResume') ) + '</button>') + '<button class="btn" data-a="tmrestart">' + t('tmRestart') + '</button><button class="btn" data-a="timerstop">' + t('timerStop') + '</button>';
+  return '<div class="sec tmpanel"><div class="row"><span class="note">' + t('timerLab') + '</span><select id="timerSel" data-a="timersel">' + opts + '</select>' + btns +
+    '<label class="note"><input type="checkbox" data-a="tmauto"' + (S.autoTimer ? ' checked' : '') + '>' + t('tmAuto') + '</label></div>' + timerBox() + '</div>';
 }
 
 /* ---------- 老師 ---------- */
@@ -343,7 +361,8 @@ function hintsHtml() {
   if (cur.mode === 'sentence' && cur.g && im) {
     const rule = (window.SD_RULEX || []).find((r) => r.re.test(cur.g.tc));
     inner += '<div class="sub">' + t('sugLab') + '</div>';
-    inner += rule ? '<div class="sug">' + esc(SC() ? rule.s[im.id].sc : rule.s[im.id].tc) + '</div>' : '<div class="note">' + t('noSug') + '</div>';
+    const sg = rule && rule.s[im.id];
+    inner += sg ? '<div class="sug">' + esc(SC() ? sg.sc : sg.tc) + '</div>' : '<div class="note">' + t('noSug') + '</div>';
     const exs = (cur.g.ex || []).slice(0, 2);
     inner += '<div class="sub">' + t('exLab') + '</div>';
     inner += exs.length ? '<ul class="exl">' + exs.map((e) => '<li>' + esc(SC() ? e.s : e.c) + '</li>').join('') + '</ul>' : '<div class="note">' + t('customNoEx') + '</div>';
@@ -379,20 +398,18 @@ function teacherSentence() {
     '<span class="note">' + poolInfo() + '</span></div>' +
     '<div class="cards' + (rolling ? ' rolling' : '') + '" id="cards">' + (img ? imgCard(img) : '<div class="card img"><div class="lab">' + t('lblImg') + '</div><div class="empty">' + t('waitT') + '</div></div>') + gramCard(g, 'waitT') + '</div>' +
     (cur.mode === 'sentence' && cur.img ? '<p class="note" style="text-align:center;margin:10px 0 0">' + t('askSentence') + '</p>' : '') +
+    (cur.mode === 'sentence' ? timerPanel() : '') +
     (cur.mode === 'sentence' ? hintsHtml() : '');
 }
 function poolInfo() { return t('setRange') + '：' + pool().length + t('pool') + ' × ' + enabledImgs().length + t('imgsN'); }
 
 function teacherStory() {
   const isStory = cur.mode === 'story';
-  const opts = [0, 60, 120, 180, 300].map((s) => '<option value="' + s + '"' + ((timerPick == null ? S.storyTimer : timerPick) === s ? ' selected' : '') + '>' + (s ? s / 60 + ' ' + t('min') : t('timerOff')) + '</option>').join('');
   const show = isStory && cur.story;
   return '<div class="sec"><h2>' + t('storyIn') + '</h2><textarea id="storyIn" placeholder="' + esc(t('storyPh')) + '"></textarea>' +
     '<div class="row" style="margin-top:8px"><button class="btn primary" data-a="storygo">' + t('storyGo') + '</button><button class="btn" data-a="storyimg">' + t('storyImg') + '</button>' +
-    '<span class="note">' + t('timerLab') + '</span><select id="timerSel" data-a="timersel">' + opts + '</select>' +
-    '<button class="btn" data-a="timerstart">' + t('timerStart') + '</button><button class="btn" data-a="timerstop">' + t('timerStop') + '</button></div></div>' +
+    '</div></div>' + (isStory ? timerPanel() : '') +
     (isStory && cur.img ? '<div class="cards">' + imgCard(cur.img) + '<div class="story"><div class="lab">' + t('storyLab') + '</div><div class="s">' + esc(show ? (SC() ? cur.story.sc : cur.story.tc) : '—') + '</div><div class="ask">' + t('askStory') + '</div></div></div>' : '') +
-    (isStory ? timerBox(clock.end ? remain() : null) : '') +
     (isStory ? hintsHtml() : '');
 }
 
@@ -432,31 +449,38 @@ function renderStudent() {
   if (!d || (!d.g && !d.story)) {
     body = '<div class="cards">' + '<div class="card img"><div class="lab">' + t('lblImg') + '</div><div class="empty">' + t('waitS') + '</div></div>' + gramCard(null, 'waitS') + '</div>';
   } else if (d.mode === 'story') {
-    const timerSec = clock.end ? remain() : null;
-    body = '<div class="cards">' + imgCard(d.img) + '<div class="story"><div class="lab">' + t('storyLab') + '</div><div class="s">' + esc(d.story ? (SC() ? d.story.sc : d.story.tc) : '—') + '</div><div class="ask">' + t('askStory') + '</div></div></div>' + timerBox(timerSec);
+    body = '<div class="cards">' + imgCard(d.img) + '<div class="story"><div class="lab">' + t('storyLab') + '</div><div class="s">' + esc(d.story ? (SC() ? d.story.sc : d.story.tc) : '—') + '</div><div class="ask">' + t('askStory') + '</div></div></div>' + timerBox();
   } else {
     const g = d.g ? { title: SC() ? d.g.sc : d.g.tc, tag: d.g.custom ? t('custom') : (d.g.b ? t('book') + d.g.b + t('bookUnit') + '・' + (d.g.lv || '') + '・' + t('book') + d.g.l + t('lesson') : '') } : null;
-    body = '<div class="cards">' + imgCard(d.img) + gramCard(g, 'waitS') + '</div><p class="note" style="text-align:center;margin-top:12px;font-size:15px">' + t('askSentence') + '</p>';
+    body = '<div class="cards">' + imgCard(d.img) + gramCard(g, 'waitS') + '</div><p class="note" style="text-align:center;margin-top:12px;font-size:15px">' + t('askSentence') + '</p>' + timerBox();
   }
   app.innerHTML = top + body;
   startLocalClock();
 }
 
 /* ================= 倒數計時 ================= */
-function remain() { return Math.max(0, Math.ceil((clock.end - Date.now()) / 1000)); }
+function tmNow() {
+  if (!clock.k) return null;
+  const el = clock.t0 ? (Date.now() - clock.t0) / 1000 : 0;
+  return clock.k === 'd' ? Math.max(0, Math.ceil(clock.base - el - 1e-6)) : Math.floor(clock.base + el + 1e-6);
+}
 function startLocalClock() {
-  if (clock.h) clearInterval(clock.h);
-  if (!clock.end) return;
+  if (clock.h) { clearInterval(clock.h); clock.h = null; }
+  if (!clock.k || !clock.t0) return;
+  if (clock.k === 'd' && tmNow() === 0) return;   // 已經時間到，不用再跑
   clock.h = setInterval(() => {
-    const r = remain();
+    const v = tmNow(); if (v == null) return;
+    const up = clock.k === 'u', done = !up && v === 0;
     const box = $('#timerBox');
-    if (box) { const m = Math.floor(r / 60), s = r % 60; box.textContent = r === 0 ? t('timeUp') : String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0'); box.classList.toggle('low', r <= 10); }
-    if (r === 0) { clearInterval(clock.h); clock.h = null; }
+    if (box) { box.textContent = done ? t('timeUp') : fmtT(v); box.classList.toggle('low', !up && v <= 10); box.classList.toggle('done', done); }
+    if (done) { clearInterval(clock.h); clock.h = null; if (role === 'teacher') render(); }
   }, 250);
 }
-function setClock(sec) {
-  if (sec && sec > 0) clock.end = Date.now() + sec * 1000; else clock.end = 0;
+// 把計時指令（tm）套到這台裝置的時鐘；tm 為 null 就清掉
+function tmSet(tm) {
   if (clock.h) { clearInterval(clock.h); clock.h = null; }
+  if (!tm) { clock.k = null; clock.t0 = 0; return; }
+  clock.k = tm.k; clock.total = tm.total; clock.base = tm.v; clock.t0 = tm.run ? Date.now() : 0;
 }
 
 /* ================= 老師動作 ================= */
@@ -464,7 +488,7 @@ function roomDoc() {
   return {
     mode: cur.mode, img: cur.img || null,
     g: cur.g ? { tc: cur.g.tc, sc: cur.g.sc, b: cur.g.tagB || 0, l: cur.g.tagL || 0, lv: cur.g.tagB ? levelOf(cur.g.tagB) : '', custom: !!cur.g.custom } : null,
-    story: cur.story || null, timerSec: cur.timerSec || null, seq: cur.seq,
+    story: cur.story || null, tm: cur.tm || null, seq: cur.seq,
   };
 }
 async function push() {
@@ -489,7 +513,7 @@ function drawSentence() {
   if (rolling) return;
   const nxt = chooseNext();
   if (!nxt) { toast(t('poolEmpty')); return; }
-  rolling = true; tab = 'sentence'; cur.mode = 'sentence'; cur.story = null; cur.timerSec = null; setClock(0);
+  rolling = true; tab = 'sentence'; cur.mode = 'sentence'; cur.story = null; cur.tm = null; tmSet(null);
   render();
   const P = pool(), I = enabledImgs();
   let n = 0;
@@ -507,6 +531,7 @@ function drawSentence() {
       rolling = false;
       cur.img = nxt.im.id; cur.g = nxt.g; cur.seq++;
       usedG.add(nxt.g.id); lastImg = nxt.im.id;
+      if (S.autoTimer) tmCmd('start', true);
       render(); push();
     }
   }, 75);
@@ -521,17 +546,34 @@ function storyGo(onlyImg) {
   const im = (onlyImg && cur.img && I.length === 1) ? I[0] : pick(I.length > 1 ? I.filter((i) => i.id !== cur.img) : I);
   cur.mode = 'story'; cur.img = im.id; cur.g = null;
   if (v) cur.story = both(v); else if (!cur.story) { toast(t('storyNeed')); return; }
-  cur.timerSec = null; setClock(0); cur.seq++;
+  cur.tm = null; tmSet(null); cur.seq++;
+  if (S.autoTimer) tmCmd('start', true);
   render(); push();
 }
-function timerStart() {
-  const sel = $('#timerSel'); const sec = +(sel ? sel.value : S.storyTimer);
-  timerPick = sec; S.storyTimer = sec; saveS();
-  if (!sec) { toast(t('timerOff')); return; }
-  if (cur.mode !== 'story' || !cur.img) { toast(t('storyNeed')); return; }
-  cur.timerSec = sec; cur.seq++; setClock(sec); render(); push();
+// 計時指令：start（開始）、pause（暫停／繼續）、restart（重來）、stop（停止）。quiet=true 時不重畫、不上傳（呼叫的人自己會做）
+function tmCmd(what, quiet) {
+  const sel = S.timerSel || 'd120';
+  const n = ((cur.tm && cur.tm.n) || 0) + 1;
+  if (what === 'stop') { cur.tm = null; tmSet(null); }
+  else if (what === 'pause') {
+    if (!cur.tm) return;
+    const v = tmNow();
+    if (clock.t0) cur.tm = { k: cur.tm.k, total: cur.tm.total, v: v, run: false, n: n };
+    else if (!(cur.tm.k === 'd' && v === 0)) cur.tm = { k: cur.tm.k, total: cur.tm.total, v: v, run: true, n: n };
+    else return;
+    tmSet(cur.tm);
+  } else {
+    // start / restart
+    let k = null, total = 0;
+    if (what === 'restart' && cur.tm) { k = cur.tm.k; total = cur.tm.total; }
+    else if (sel === 'u') { k = 'u'; }
+    else if (/^d\d+$/.test(sel)) { k = 'd'; total = +sel.slice(1); }
+    if (!k) { if (!quiet) toast(t('timerOff')); return; }
+    cur.tm = { k: k, total: total, v: k === 'd' ? total : 0, run: true, n: n };
+    tmSet(cur.tm);
+  }
+  if (!quiet) { cur.seq++; render(); push(); }
 }
-function timerStop() { cur.timerSec = null; cur.seq++; setClock(0); render(); push(); }
 
 async function openRoom() {
   if (roomBusy || room) return;
@@ -544,19 +586,21 @@ async function endRoom() { if (!room) return; const c = room.code; room = null; 
 
 /* ================= 學生動作 ================= */
 async function joinRoom(code) {
-  sErr = ''; sState = null; sCode = code; clock.lastSeq = -1; setClock(0);
+  sErr = ''; sState = null; sCode = code; clock.lastN = -1; clock.lastSeq = -1; tmSet(null);
   if (sUnsub) { try { sUnsub(); } catch (e) {} sUnsub = null; }
   role = 'student'; render();
   try {
     sUnsub = await Sync.subscribe(code, (d) => {
       if (!d) { sErr = sState ? t('expired') : t('badRoom'); sState = null; render(); return; }
       sErr = ''; sState = d;
-      if (d.seq !== clock.lastSeq) { clock.lastSeq = d.seq; setClock(d.timerSec && d.mode === 'story' ? d.timerSec : 0); }
+      // 老師換圖、換計時或暫停時（seq 或 n 變了），這台裝置就照新的指令重設時鐘
+      const key = d.seq + ':' + (d.tm ? d.tm.n : 0);
+      if (key !== clock.lastN) { clock.lastN = key; tmSet(d.tm || null); }
       render();
     }, () => { sErr = t('connFail'); render(); });
   } catch (e) { sErr = t('connFail'); render(); }
 }
-function leaveStudent() { if (sUnsub) { try { sUnsub(); } catch (e) {} sUnsub = null; } sState = null; sCode = null; sErr = ''; role = null; setClock(0); render(); }
+function leaveStudent() { if (sUnsub) { try { sUnsub(); } catch (e) {} sUnsub = null; } sState = null; sCode = null; sErr = ''; role = null; tmSet(null); render(); }
 
 /* ================= 事件 ================= */
 document.addEventListener('click', async (e) => {
@@ -568,15 +612,17 @@ document.addEventListener('click', async (e) => {
     case 'teacher': role = 'teacher'; tab = 'sentence'; render(); break;
     case 'student': $('#joinBox').classList.remove('hide'); $('#joinIn').focus(); break;
     case 'join': { const c = ($('#joinIn').value || '').trim(); if (!/^\d{4}$/.test(c)) { $('#joinErr').textContent = t('badRoom'); break; } joinRoom(c); break; }
-    case 'home': if (room) { if (!confirm(t('endRoom') + '？')) break; await endRoom(); } role = null; cur = { mode: 'sentence', img: null, g: null, story: null, timerSec: null, seq: 0 }; setClock(0); render(); break;
+    case 'home': if (room) { if (!confirm(t('endRoom') + '？')) break; await endRoom(); } role = null; cur = { mode: 'sentence', img: null, g: null, story: null, tm: null, seq: 0 }; tmSet(null); render(); break;
     case 'leave': leaveStudent(); break;
     case 'tab': if (tab === 'story') storyText(); tab = v; render(); break;
     case 'draw': drawSentence(); break;
     case 'togglehints': S.showHints = !S.showHints; saveS(); render(); break;
     case 'storygo': storyGo(false); break;
     case 'storyimg': storyGo(true); break;
-    case 'timerstart': timerStart(); break;
-    case 'timerstop': timerStop(); break;
+    case 'tmstart': tmCmd('start'); break;
+    case 'tmpause': tmCmd('pause'); break;
+    case 'tmrestart': tmCmd('restart'); break;
+    case 'timerstop': tmCmd('stop'); break;
     case 'openroom': openRoom(); break;
     case 'endroom': endRoom(); break;
     case 'copylink': try { await navigator.clipboard.writeText(el.dataset.url); toast(t('copied')); } catch (er) { prompt('', el.dataset.url); } break;
@@ -605,7 +651,8 @@ document.addEventListener('change', (e) => {
   else if (a === 'custon') { const c = S.customs.find((x) => x.id === el.dataset.v); if (c) { c.on = el.checked; saveS(); updateRange(); } }
   else if (a === 'img') { const id = el.dataset.v; S.imgsOff = el.checked ? S.imgsOff.filter((x) => x !== id) : S.imgsOff.concat(id); saveS(); updateRange(); }
   else if (a === 'norepeat') { S.noRepeat = el.checked; saveS(); }
-  else if (a === 'timersel') { timerPick = +el.value; S.storyTimer = timerPick; saveS(); }
+  else if (a === 'timersel') { S.timerSel = el.value; saveS(); }
+  else if (a === 'tmauto') { S.autoTimer = el.checked; saveS(); }
 });
 function updateRange() {
   const h = document.querySelector('.sec h2'); if (h) h.textContent = t('setRange') + '：' + pool().length + t('pool') + ' × ' + enabledImgs().length + t('imgsN');

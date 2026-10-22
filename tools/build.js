@@ -3,22 +3,30 @@ const fs = require('fs');
 const path = require('path');
 const OpenCC = require('opencc-js');
 const { IMAGES, ORDER, R } = require('./content-src.js');
+const { IMAGES2, TPL, H } = require('./content-src2.js');
 const toSC = OpenCC.Converter({ from: 'tw', to: 'cn' });
 const both = (s) => ({ tc: s, sc: toSC(s) });
 
-const images = IMAGES.map((im) => ({
+const images = IMAGES.concat(IMAGES2).map((im) => ({
   id: im.id,
-  src: im.src,
+  src: im.src || ('images/' + im.id + '.svg'),
   name: both(im.name),
   words: im.words.map(both),
 }));
 
-const rules = R.map((row) => {
+const rules = R.map((row, ri) => {
   const [re, ...sents] = row;
   if (sents.length !== ORDER.length) throw new Error('句子數量不對：' + re);
   new RegExp(re); // 檢查正規表示式
   const s = {};
   ORDER.forEach((id, i) => { s[id] = both(sents[i]); });
+  // 第二批圖片：用範本填空產生（沒有範本、或該圖不適用的就不放）
+  IMAGES2.forEach((im) => {
+    const f = TPL[ri];
+    if (!f || im.skip.includes(ri) || (im.home && H(im).includes(ri))) return;
+    const x = f(im);
+    if (x) s[im.id] = both(x);
+  });
   return { re, s };
 });
 
