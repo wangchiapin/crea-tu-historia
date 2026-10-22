@@ -1,0 +1,46 @@
+// 造句小劇場 Crea tu Historia：連線房間的 Firestore 規則
+// 貼進 memorma-24dab 專案現有規則的 `match /databases/{database}/documents { ... }` 裡面，
+// 和 memorama_rooms 放在同一層。它用到你規則裡已經有的 signedIn()。
+//
+// 行為：
+// - 老師（匿名登入）開房：4 位數房號，6 小時後過期（rules 限制最長 7 小時）
+// - 學生（匿名登入）只能讀，不能寫
+// - 只有開房的老師能更新、刪除；過期的房間任何人都可以接手同房號
+// - 老師專用的例句建議「不會」寫進這個文件（只存圖片代號、語法點名稱、故事句子、倒數秒數）
+
+    // ---- 造句小劇場 連線房間 ----
+    match /sentence_rooms/{code} {
+      function r() { return request.resource.data; }
+      function old() { return resource.data; }
+      function reclaimable() { return old().expireAt < request.time; }
+      function okShape() {
+        return r().keys().hasOnly(['code','hostUid','mode','img','g','story','timerSec','seq','createdAt','expireAt'])
+          && r().mode in ['sentence','story']
+          && (r().img == null || (r().img is string && r().img.size() <= 20))
+          && (r().g == null || (r().g is map && r().g.tc is string && r().g.tc.size() <= 80
+                                && r().g.sc is string && r().g.sc.size() <= 80))
+          && (r().story == null || (r().story is map && r().story.tc is string && r().story.tc.size() <= 300
+                                    && r().story.sc is string && r().story.sc.size() <= 300))
+          && (r().timerSec == null || (r().timerSec is int && r().timerSec >= 0 && r().timerSec <= 3600))
+          && r().seq is int
+          && r().expireAt is timestamp
+          && r().expireAt <= request.time + duration.value(7, 'h');
+      }
+      function validNew() {
+        return code.matches('^[0-9]{4}$')
+          && r().code == code
+          && r().hostUid == request.auth.uid
+          && r().createdAt == request.time
+          && okShape();
+      }
+      function hostUpdate() {
+        return request.auth.uid == old().hostUid
+          && r().code == old().code && r().hostUid == old().hostUid
+          && r().createdAt == old().createdAt && r().expireAt == old().expireAt
+          && okShape();
+      }
+      allow read: if signedIn();
+      allow create: if signedIn() && validNew();
+      allow update: if signedIn() && ((reclaimable() && validNew()) || (!reclaimable() && hostUpdate()));
+      allow delete: if signedIn() && (reclaimable() || request.auth.uid == old().hostUid);
+    }

@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+<defs>
+<linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9e1d3"/><stop offset="1" stop-color="#cfc4b1"/></linearGradient>
+<linearGradient id="counter" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8d8f93"/><stop offset="1" stop-color="#5d5f64"/></linearGradient>
+<linearGradient id="steel" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7d8288"/><stop offset="0.2" stop-color="#e6e9ec"/><stop offset="0.5" stop-color="#b4b9bf"/><stop offset="0.8" stop-color="#eef0f2"/><stop offset="1" stop-color="#6e7379"/></linearGradient>
+<linearGradient id="stove" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2b2d31"/><stop offset="1" stop-color="#17181b"/></linearGradient>
+<radialGradient id="soup" cx="0.5" cy="0.5" r="0.6"><stop offset="0" stop-color="#e8a23c"/><stop offset="1" stop-color="#b5651f"/></radialGradient>
+<radialGradient id="flame" cx="0.5" cy="0.8" r="0.8"><stop offset="0" stop-color="#bfe3ff"/><stop offset="0.5" stop-color="#4a9bff"/><stop offset="1" stop-color="#2255d8" stop-opacity="0.2"/></radialGradient>
+<radialGradient id="tom" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stop-color="#ff6a55"/><stop offset="1" stop-color="#b3221a"/></radialGradient>
+<linearGradient id="carrot" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ff9a3c"/><stop offset="1" stop-color="#d9601a"/></linearGradient>
+<filter id="b6"><feGaussianBlur stdDeviation="6"/></filter>
+<filter id="b3"><feGaussianBlur stdDeviation="3"/></filter>
+<filter id="b10"><feGaussianBlur stdDeviation="10"/></filter>
+<pattern id="tile" width="80" height="80" patternUnits="userSpaceOnUse"><rect width="80" height="80" fill="#f4efe6"/><rect x="1.5" y="1.5" width="77" height="77" fill="#faf6ee" rx="3"/><rect x="0" y="0" width="80" height="80" fill="none" stroke="#cfc6b6" stroke-width="3"/></pattern>
+</defs>
+<rect width="800" height="600" fill="url(#wall)"/>
+<rect x="0" y="0" width="800" height="360" fill="url(#tile)"/>
+<rect x="0" y="0" width="800" height="360" fill="#fff4d8" opacity="0.18"/>
+<!-- counter surface -->
+<rect x="0" y="360" width="800" height="240" fill="url(#counter)"/>
+<rect x="0" y="360" width="800" height="8" fill="#b9bcc0"/>
+<rect x="0" y="368" width="800" height="14" fill="#000" opacity="0.2" filter="url(#b3)"/>
+<!-- stove top -->
+<rect x="170" y="400" width="460" height="170" rx="10" fill="url(#stove)"/>
+<rect x="170" y="400" width="460" height="6" fill="#4a4d54" rx="3"/>
+<g fill="#111" stroke="#555" stroke-width="2"><ellipse cx="400" cy="500" rx="82" ry="22"/></g>
+<ellipse cx="400" cy="500" rx="52" ry="13" fill="#25272c" stroke="#666" stroke-width="2"/>
+<g><ellipse cx="400" cy="504" rx="48" ry="12" fill="none" stroke="#2a64ff" stroke-width="3" opacity="0.7" filter="url(#b3)"/>
+<path d="M360 505 q4 -10 8 0z M376 508 q4 -12 8 0z M392 509 q4 -12 8 0z M408 509 q4 -12 8 0z M424 508 q4 -12 8 0z M440 505 q4 -10 8 0z" fill="url(#flame)"/></g>
+<g fill="#111" stroke="#555" stroke-width="2"><ellipse cx="250" cy="520" rx="46" ry="12"/><ellipse cx="550" cy="520" rx="46" ry="12"/></g>
+<g fill="#1a1b1e" stroke="#777" stroke-width="2"><circle cx="190" cy="550" r="9"/><circle cx="240" cy="552" r="9"/><circle cx="560" cy="552" r="9"/><circle cx="610" cy="550" r="9"/></g>
+<!-- pot -->
+<ellipse cx="400" cy="508" rx="120" ry="14" fill="#000" opacity="0.5" filter="url(#b3)"/>
+<path d="M290 360 L290 485 Q290 505 320 505 L480 505 Q510 505 510 485 L510 360Z" fill="url(#steel)"/>
+<ellipse cx="400" cy="360" rx="110" ry="26" fill="#d9dde1"/>
+<ellipse cx="400" cy="362" rx="100" ry="22" fill="#6b7077"/>
+<ellipse cx="400" cy="365" rx="92" ry="18" fill="url(#soup)"/>
+<g fill="#f6c768" opacity="0.8"><ellipse cx="370" cy="363" rx="9" ry="3"/><ellipse cx="420" cy="368" rx="7" ry="2.5"/><ellipse cx="395" cy="372" rx="5" ry="2"/></g>
+<g fill="#d94a2c"><ellipse cx="440" cy="362" rx="9" ry="4"/><ellipse cx="352" cy="368" rx="8" ry="3.5"/></g>
+<g fill="#ffa24a"><ellipse cx="410" cy="360" rx="7" ry="3.5"/><ellipse cx="380" cy="370" rx="7" ry="3"/></g>
+<path d="M285 395 Q282 420 290 440 L292 395Z" fill="#fff" opacity="0.5"/>
+<rect x="505" y="392" width="95" height="16" rx="8" fill="#e6e9ec"/><rect x="505" y="392" width="95" height="5" rx="3" fill="#fff" opacity="0.6"/>
+<rect x="282" y="372" width="12" height="9" rx="4" fill="#b9bdc2"/>
+<!-- steam -->
+<g stroke="#fff" stroke-width="12" fill="none" stroke-linecap="round" opacity="0.55" filter="url(#b6)">
+<path d="M360 340 C335 300 385 280 355 235 C340 205 372 190 360 160"/><path d="M410 340 C390 300 435 285 410 245 C395 215 420 200 410 170"/><path d="M455 340 C440 305 480 290 460 255"/>
+</g>
+<!-- wooden spoon resting -->
+<g transform="rotate(-24 650 360)"><rect x="520" y="378" width="190" height="12" rx="6" fill="#c99863"/><ellipse cx="722" cy="384" rx="26" ry="15" fill="#c18b52"/><rect x="520" y="379" width="190" height="3" fill="#e8c597" opacity="0.7"/></g>
+<!-- vegetables on counter left -->
+<ellipse cx="85" cy="545" rx="100" ry="20" fill="#000" opacity="0.3" filter="url(#b6)"/>
+<g><circle cx="70" cy="510" r="36" fill="url(#tom)"/><path d="M52 486 L68 478 L72 490 L84 480 L90 494 Q70 498 52 486Z" fill="#3a8a3d"/><ellipse cx="58" cy="498" rx="9" ry="6" fill="#fff" opacity="0.4"/></g>
+<g><circle cx="125" cy="528" r="30" fill="url(#tom)"/><path d="M110 508 L124 502 L128 512 L138 504 L142 516 Q124 518 110 508Z" fill="#3a8a3d"/><ellipse cx="114" cy="518" rx="7" ry="5" fill="#fff" opacity="0.4"/></g>
+<g transform="rotate(-12 60 568)"><path d="M10 560 L110 548 Q120 556 110 566 L10 574Q2 568 10 560Z" fill="url(#carrot)"/><path d="M110 548 l22 -12 M112 552 l24 0 M110 560 l22 10" stroke="#3f9a3f" stroke-width="6" stroke-linecap="round"/></g>
+<!-- shelf with jars -->
+<rect x="620" y="150" width="180" height="10" fill="#a47a4e"/>
+<g><rect x="640" y="90" width="42" height="60" rx="6" fill="#e9eef2" opacity="0.9"/><rect x="640" y="90" width="42" height="14" rx="4" fill="#8a6a45"/><rect x="646" y="112" width="30" height="32" fill="#d9a441" opacity="0.8"/>
+<rect x="700" y="100" width="42" height="50" rx="6" fill="#e9eef2" opacity="0.9"/><rect x="700" y="100" width="42" height="12" rx="4" fill="#8a6a45"/><rect x="706" y="120" width="30" height="24" fill="#b53a2a" opacity="0.8"/></g>
+<rect x="0" y="0" width="800" height="600" fill="#2a1a0a" opacity="0.06"/>
+</svg>

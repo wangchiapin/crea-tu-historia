@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+<defs>
+<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7fb8e6"/><stop offset="1" stop-color="#d8ecf5"/></linearGradient>
+<linearGradient id="grass" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6fa24a"/><stop offset="1" stop-color="#3f7a2f"/></linearGradient>
+<linearGradient id="path" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#d9c9a6"/><stop offset="1" stop-color="#b9a47c"/></linearGradient>
+<radialGradient id="leaf" cx="0.35" cy="0.3" r="0.9"><stop offset="0" stop-color="#8cc25a"/><stop offset="0.6" stop-color="#4f8f35"/><stop offset="1" stop-color="#2e6224"/></radialGradient>
+<radialGradient id="leafFar" cx="0.4" cy="0.3" r="0.9"><stop offset="0" stop-color="#9ccb8d"/><stop offset="1" stop-color="#5f9a58"/></radialGradient>
+<linearGradient id="trunk" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4a3322"/><stop offset="0.45" stop-color="#7a5a3d"/><stop offset="1" stop-color="#3b281a"/></linearGradient>
+<linearGradient id="slat" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c58d55"/><stop offset="1" stop-color="#8d5d33"/></linearGradient>
+<radialGradient id="sun"><stop offset="0" stop-color="#fffbe0" stop-opacity="0.9"/><stop offset="1" stop-color="#fff3b0" stop-opacity="0"/></radialGradient>
+<filter id="b6"><feGaussianBlur stdDeviation="6"/></filter>
+<filter id="b3"><feGaussianBlur stdDeviation="3"/></filter>
+<filter id="b14"><feGaussianBlur stdDeviation="14"/></filter>
+</defs>
+<rect width="800" height="600" fill="url(#sky)"/>
+<circle cx="640" cy="70" r="150" fill="url(#sun)"/>
+<g opacity="0.85" filter="url(#b6)"><ellipse cx="180" cy="90" rx="90" ry="26" fill="#fff"/><ellipse cx="240" cy="75" rx="60" ry="24" fill="#fff"/><ellipse cx="520" cy="140" rx="80" ry="20" fill="#fff"/></g>
+<!-- distant trees -->
+<g filter="url(#b3)" opacity="0.9">
+<ellipse cx="60" cy="330" rx="90" ry="90" fill="url(#leafFar)"/><ellipse cx="190" cy="350" rx="85" ry="75" fill="url(#leafFar)"/>
+<ellipse cx="560" cy="340" rx="100" ry="80" fill="url(#leafFar)"/><ellipse cx="720" cy="320" rx="95" ry="95" fill="url(#leafFar)"/>
+</g>
+<rect x="0" y="390" width="800" height="210" fill="url(#grass)"/>
+<g filter="url(#b3)" opacity="0.5"><ellipse cx="300" cy="400" rx="260" ry="14" fill="#9ed06a"/></g>
+<!-- path -->
+<path d="M-20 600 Q260 520 380 420 L470 420 Q420 520 560 600Z" fill="url(#path)"/>
+<path d="M-20 600 Q260 520 380 420 L395 420 Q280 530 20 600Z" fill="#000" opacity="0.08"/>
+<!-- big tree on the right -->
+<path d="M628 600 Q640 470 622 360 Q618 300 645 250 L690 250 Q712 310 700 380 Q690 470 712 600Z" fill="url(#trunk)"/>
+<path d="M650 300 Q640 420 655 590" stroke="#2c1d12" stroke-width="3" fill="none" opacity="0.5"/>
+<path d="M686 300 Q690 420 696 580" stroke="#a98562" stroke-width="3" fill="none" opacity="0.4"/>
+<g>
+<circle cx="560" cy="170" r="95" fill="url(#leaf)"/><circle cx="650" cy="110" r="105" fill="url(#leaf)"/><circle cx="750" cy="170" r="100" fill="url(#leaf)"/>
+<circle cx="610" cy="230" r="85" fill="url(#leaf)"/><circle cx="715" cy="250" r="90" fill="url(#leaf)"/><circle cx="520" cy="250" r="70" fill="url(#leaf)"/>
+</g>
+<g filter="url(#b3)" fill="#c6e48b" opacity="0.55"><circle cx="600" cy="80" r="34"/><circle cx="700" cy="120" r="30"/><circle cx="545" cy="140" r="28"/><circle cx="760" cy="190" r="26"/></g>
+<g fill="#2b5a22" opacity="0.4"><circle cx="640" cy="270" r="44"/><circle cx="730" cy="290" r="40"/><circle cx="560" cy="290" r="36"/></g>
+<!-- dappled light on grass -->
+<g filter="url(#b3)" fill="#d9f0a0" opacity="0.45"><ellipse cx="120" cy="470" rx="40" ry="10"/><ellipse cx="250" cy="560" rx="50" ry="12"/><ellipse cx="520" cy="500" rx="36" ry="9"/><ellipse cx="740" cy="540" rx="46" ry="11"/></g>
+<!-- tree shadow -->
+<ellipse cx="500" cy="585" rx="260" ry="26" fill="#1c3b14" opacity="0.4" filter="url(#b6)"/>
+<!-- bench -->
+<ellipse cx="260" cy="508" rx="175" ry="16" fill="#1c3b14" opacity="0.5" filter="url(#b6)"/>
+<g>
+<rect x="105" y="395" width="14" height="115" fill="#2d2d33"/><rect x="395" y="395" width="14" height="115" fill="#2d2d33"/>
+<rect x="125" y="445" width="10" height="68" fill="#3a3a42"/><rect x="380" y="445" width="10" height="68" fill="#3a3a42"/>
+<path d="M105 395 L105 330 Q105 320 115 320 L119 320 L119 395Z" fill="#2d2d33"/><path d="M395 395 L395 330 Q395 320 405 320 L409 320 L409 395Z" fill="#2d2d33"/>
+<rect x="100" y="335" width="315" height="26" rx="3" fill="url(#slat)"/><rect x="100" y="368" width="315" height="26" rx="3" fill="url(#slat)"/>
+<rect x="95" y="418" width="325" height="20" rx="3" fill="url(#slat)"/><rect x="95" y="441" width="325" height="20" rx="3" fill="url(#slat)"/>
+<g fill="#e3b078" opacity="0.7"><rect x="100" y="337" width="315" height="3"/><rect x="100" y="370" width="315" height="3"/><rect x="95" y="420" width="325" height="3"/><rect x="95" y="443" width="325" height="3"/></g>
+<g fill="#3d2410" opacity="0.35"><rect x="100" y="357" width="315" height="4"/><rect x="100" y="390" width="315" height="4"/><rect x="95" y="434" width="325" height="4"/><rect x="95" y="457" width="325" height="4"/></g>
+<g fill="#555" opacity="0.8"><circle cx="112" cy="348" r="2.5"/><circle cx="402" cy="348" r="2.5"/><circle cx="112" cy="381" r="2.5"/><circle cx="402" cy="381" r="2.5"/></g>
+</g>
+<!-- fallen leaves -->
+<g><path d="M300 540 q10 -10 22 0 q-10 10 -22 0z" fill="#d98a2b"/><path d="M450 565 q10 -10 22 0 q-10 10 -22 0z" fill="#c4521f"/><path d="M180 530 q10 -10 22 0 q-10 10 -22 0z" fill="#e0a93a"/><path d="M580 520 q10 -10 22 0 q-10 10 -22 0z" fill="#d98a2b"/></g>
+<g fill="#e0a93a"><path d="M520 340 q6 -8 14 0 q-6 8 -14 0z" transform="rotate(30 527 340)"/><path d="M470 400 q6 -8 14 0 q-6 8 -14 0z" transform="rotate(-20 477 400)"/></g>
+</svg>

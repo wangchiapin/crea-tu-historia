@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>造句小劇場</title>
+<style>
+:root{
+  --bg:#e8e1d3; --panel:#f6f1e6; --ink:#1f1d1a; --mute:#6a6457; --line:#2a2722;
+  --soft:#d9d0bd; --hint:#efe0b8; --ok:#3d5a3a; --warn:#8a3b24;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei","Noto Sans SC","PingFang SC",system-ui,sans-serif;
+  -webkit-text-size-adjust:100%}
+body{min-height:100vh;min-height:100dvh}
+button{font:inherit;color:inherit;cursor:pointer}
+.wrap{max-width:1040px;margin:0 auto;padding:14px 14px calc(40px + env(safe-area-inset-bottom))}
+.hide{display:none!important}
+/* 頂端列 */
+.top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.brand{font-weight:700;font-size:18px;letter-spacing:.06em;margin-right:auto}
+.chip,.btn{border:1.5px solid var(--line);background:var(--panel);border-radius:6px;padding:7px 12px;font-size:14px;line-height:1.2}
+.btn:active,.chip:active{transform:translateY(1px)}
+.btn.primary{background:var(--ink);color:var(--panel)}
+.btn.small{padding:5px 9px;font-size:13px}
+.btn.danger{color:var(--warn);border-color:var(--warn)}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.chip.on{background:var(--ink);color:var(--panel)}
+.tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
+.tabs .chip{padding:8px 16px;font-size:15px}
+.pill{display:inline-block;border:1.5px solid var(--line);border-radius:999px;padding:3px 10px;font-size:13px;background:var(--panel)}
+.pill.live{background:var(--ok);color:#fff;border-color:var(--ok)}
+/* 首頁 */
+.home{max-width:520px;margin:8vh auto 0;text-align:center}
+.home h1{font-size:34px;letter-spacing:.1em;margin:0 0 6px}
+.home p{color:var(--mute);margin:0 0 28px}
+.home .btn{display:block;width:100%;padding:16px;font-size:18px;margin-bottom:12px}
+.join{display:flex;gap:8px;margin-top:6px}
+.join input{flex:1;font-size:26px;letter-spacing:.3em;text-align:center;border:1.5px solid var(--line);border-radius:6px;background:#fffdf7;padding:10px;min-width:0}
+.err{color:var(--warn);min-height:22px;margin-top:8px;font-size:14px}
+/* 卡片 */
+.cards{display:grid;grid-template-columns:1.25fr 1fr;gap:12px}
+@media(max-width:720px){.cards{grid-template-columns:1fr}}
+.card{background:var(--panel);border:2px solid var(--line);border-radius:8px;overflow:hidden;display:flex;flex-direction:column}
+.card .lab{font-size:12px;letter-spacing:.14em;color:var(--mute);padding:8px 12px 0}
+.card.img img{display:block;width:100%;height:auto;aspect-ratio:4/3;object-fit:cover;border-top:1.5px solid var(--line);margin-top:8px;background:var(--soft)}
+.card.img .cap{padding:7px 12px;font-size:14px;border-top:1.5px solid var(--line)}
+.card.gram{justify-content:center;min-height:200px}
+.card.gram .body{padding:18px 16px 22px;text-align:center;display:flex;flex-direction:column;gap:12px;justify-content:center;flex:1}
+.gtitle{font-size:clamp(26px,5.2vw,42px);font-weight:700;line-height:1.3;word-break:break-word;text-wrap:balance}
+.gtag{font-size:13px;color:var(--mute)}
+.empty{color:var(--mute);font-size:18px;padding:40px 16px;text-align:center;line-height:1.8}
+.drawrow{display:flex;gap:10px;align-items:center;margin:14px 0;flex-wrap:wrap}
+.draw{background:var(--ink);color:var(--panel);border:2px solid var(--ink);border-radius:8px;font-size:22px;letter-spacing:.3em;padding:14px 40px;font-weight:700}
+.draw:active{transform:translateY(1px)}
+.draw[disabled]{opacity:.5}
+.rolling .gtitle,.rolling img{opacity:.75}
+.note{font-size:13px;color:var(--mute)}
+/* 老師專用區 */
+.tonly{margin-top:14px;border:2px dashed #8a7a4a;background:var(--hint);border-radius:8px;padding:12px 14px}
+.tonly h3{margin:0 0 8px;font-size:14px;letter-spacing:.08em;display:flex;align-items:center;gap:8px}
+.tonly h3 .btn{margin-left:auto}
+.sug{font-size:clamp(20px,3.4vw,26px);line-height:1.6;font-weight:600;margin:4px 0 10px}
+.sub{font-size:13px;color:var(--mute);margin:10px 0 3px}
+.exl{margin:0;padding-left:18px;line-height:1.7}
+.words{display:flex;gap:6px;flex-wrap:wrap}
+.words span{background:var(--panel);border:1px solid var(--line);border-radius:4px;padding:2px 8px;font-size:14px}
+.thidden{margin-top:14px;border:1.5px dashed #8a7a4a;border-radius:8px;padding:8px 12px;display:flex;align-items:center;gap:8px;font-size:14px;color:var(--mute)}
+.thidden .btn{margin-left:auto}
+/* 設定 */
+.sec{background:var(--panel);border:1.5px solid var(--line);border-radius:8px;padding:12px 14px;margin-bottom:12px}
+.sec h2{font-size:16px;margin:0 0 8px;letter-spacing:.06em}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.sec input[type=text],.sec textarea,.sec select{font:inherit;border:1.5px solid var(--line);border-radius:6px;background:#fffdf7;padding:8px 10px;min-width:0}
+.sec textarea{width:100%;min-height:78px;resize:vertical;font-size:18px}
+details.bk{border:1px solid var(--line);border-radius:6px;margin-top:8px;background:#fbf8f0}
+details.bk>summary{padding:8px 10px;cursor:pointer;font-weight:600;display:flex;gap:8px;align-items:center}
+.plist{padding:4px 10px 10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:2px 12px;max-height:380px;overflow:auto}
+.plist label{display:flex;gap:6px;align-items:flex-start;padding:3px 0;font-size:14px;line-height:1.35;cursor:pointer}
+.plist input{margin-top:3px}
+.plist .id{color:var(--mute);font-size:11px;min-width:34px}
+.imgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
+.imgs label{border:1.5px solid var(--line);border-radius:6px;overflow:hidden;background:#fbf8f0;cursor:pointer;font-size:13px}
+.imgs img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover}
+.imgs span{display:flex;gap:6px;align-items:center;padding:5px 8px}
+.cust{display:flex;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--soft)}
+.cust .t{flex:1;min-width:0}
+/* 計時 */
+.timer{font-size:clamp(34px,8vw,64px);font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.06em;text-align:center;border:2px solid var(--line);border-radius:8px;background:var(--panel);padding:6px 0;margin-top:12px}
+.timer.low{background:var(--warn);color:#fff}
+.story{background:var(--panel);border:2px solid var(--line);border-radius:8px;padding:16px;text-align:center}
+.story .lab{font-size:12px;letter-spacing:.14em;color:var(--mute);margin-bottom:6px}
+.story .s{font-size:clamp(24px,5vw,38px);font-weight:700;line-height:1.4}
+.story .ask{margin-top:10px;color:var(--mute);font-size:15px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:10px 16px;border-radius:6px;font-size:14px;z-index:9;max-width:90vw}
+.roombar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border:1.5px solid var(--line);border-radius:8px;background:var(--panel);padding:8px 12px;margin-bottom:12px}
+.roombar .code{font-size:30px;font-weight:700;letter-spacing:.25em}
+.roombar .grow{flex:1;min-width:140px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<div class="toast hide" id="toast"></div>
+
+<script src="content.js"></script>
+<script>
+/* ================= 基本工具 ================= */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const LOCAL = /[?&]local=1/.test(location.search);   // 測試用：用同一個瀏覽器的分頁模擬連線
+const LS_KEY = 'sd_settings_v1';
+
+/* 介面文字：[繁體, 簡體] */
+const T = {
+  title: ['造句小劇場', '造句小剧场'],
+  sub: ['抽一張圖片卡和一個語法點，用它們造句', '抽一张图片卡和一个语法点，用它们造句'],
+  iamT: ['我是老師', '我是老师'], iamS: ['我是學生', '我是学生'],
+  roomNo: ['輸入 4 位數房號', '输入 4 位数房号'], join: ['加入', '加入'],
+  badRoom: ['找不到這個房間，請問老師房號', '找不到这个房间，请问老师房号'],
+  expired: ['這個房間已經結束了', '这个房间已经结束了'],
+  connFail: ['連線失敗，請檢查網路後再試', '连线失败，请检查网络后再试'],
+  tabS: ['造句抽選', '造句抽选'], tabStory: ['編故事', '编故事'], tabSet: ['設定', '设置'],
+  draw: ['抽選', '抽选'], drawing: ['抽選中…', '抽选中…'],
+  lblImg: ['圖片卡', '图片卡'], lblGram: ['語法點', '语法点'],
+  waitT: ['按「抽選」開始', '按「抽选」开始'],
+  waitS: ['等老師抽選…', '等老师抽选…'],
+  askSentence: ['請用這張圖片和這個語法點造一個句子', '请用这张图片和这个语法点造一个句子'],
+  askStory: ['請想一個短故事，並且用到上面這個句子', '请想一个短故事，并且用到上面这个句子'],
+  storyLab: ['故事裡一定要用到這個句子', '故事里一定要用到这个句子'],
+  tonlyTitle: ['老師專用・學生看不到', '老师专用・学生看不到'],
+  hide: ['隱藏', '隐藏'], show: ['顯示', '显示'],
+  hiddenBar: ['老師專用區已隱藏', '老师专用区已隐藏'],
+  sugLab: ['例句建議（配這張圖＋這個語法點）', '例句建议（配这张图＋这个语法点）'],
+  noSug: ['這個語法點還沒有配這張圖的句子，可參考下面的教材例句和圖片可用詞。', '这个语法点还没有配这张图的句子，可参考下面的教材例句和图片可用词。'],
+  exLab: ['教材例句（《當代中文課程》）', '教材例句（《当代中文课程》）'],
+  wordsLab: ['這張圖可以用的詞', '这张图可以用的词'],
+  customNoEx: ['這是自訂語法點，沒有教材例句', '这是自订语法点，没有教材例句'],
+  online: ['單機模式', '单机模式'], openRoom: ['開啟連線', '开启连线'], endRoom: ['結束連線', '结束连线'],
+  roomLabel: ['房號', '房号'], copyLink: ['複製學生連結', '复制学生链接'], copied: ['已複製', '已复制'],
+  roomHelp: ['學生用手機打開同一個網址，輸入房號就能加入。', '学生用手机打开同一个网址，输入房号就能加入。'],
+  creating: ['建立房間中…', '建立房间中…'],
+  live: ['連線中', '连线中'],
+  storyIn: ['老師輸入一個句子（學生要在故事裡用到它）', '老师输入一个句子（学生要在故事里用到它）'],
+  storyPh: ['例如：他終於找到鑰匙了。', '例如：他终于找到钥匙了。'],
+  storyGo: ['出題（抽圖片＋送出句子）', '出题（抽图片＋送出句子）'],
+  storyImg: ['只換圖片', '只换图片'], storyNeed: ['請先輸入句子', '请先输入句子'],
+  timerLab: ['倒數計時', '倒数计时'], timerOff: ['不計時', '不计时'], min: ['分鐘', '分钟'],
+  timerStart: ['開始倒數', '开始倒数'], timerStop: ['停止', '停止'], timeUp: ['時間到！', '时间到！'],
+  storyAid: ['故事提示：誰？在哪裡？發生什麼事？後來怎麼了？', '故事提示：谁？在哪里？发生什么事？后来怎么了？'],
+  setRange: ['抽選範圍', '抽选范围'], pool: ['個語法點', '个语法点'], imgsN: ['張圖片', '张图片'],
+  setLevel: ['程度（可多選）', '程度（可多选）'],
+  setLevelNote: ['先選要抽哪幾冊，再到下面微調個別語法點。', '先选要抽哪几册，再到下面微调个别语法点。'],
+  setFine: ['微調語法點（勾選＝會被抽到）', '微调语法点（勾选＝会被抽到）'],
+  search: ['搜尋語法點…', '搜索语法点…'], allOn: ['全選', '全选'], allOff: ['全不選', '全不选'],
+  setCustom: ['自訂語法點', '自订语法点'], cTitle: ['語法點名稱，例如：連……都……', '语法点名称，例如：连……都……'],
+  cEx: ['例句（選填）', '例句（选填）'], add: ['新增', '新增'], del: ['刪除', '删除'],
+  setImgs: ['圖片卡（勾選＝會被抽到）', '图片卡（勾选＝会被抽到）'],
+  setOther: ['其他', '其他'], noRepeat: ['抽過的不再重複（抽完一輪再重來）', '抽过的不再重复（抽完一轮再重来）'],
+  poolEmpty: ['抽選範圍是空的，請到「設定」選至少一冊或自訂語法點，並勾選圖片', '抽选范围是空的，请到“设置”选至少一册或自订语法点，并勾选图片'],
+  book: ['第', '第'], bookUnit: ['冊', '册'], lesson: ['課', '课'], custom: ['自訂', '自订'],
+  leave: ['離開', '离开'], back: ['回首頁', '回首页'],
+  netOffer: ['連線功能需要網路', '连线功能需要网络'],
+};
+const SC = () => (S.lang === 'sc' ? 1 : 0);
+const t = (k) => (T[k] ? T[k][SC()] : k);
+
+/* ================= 設定（存在這台裝置） ================= */
+const DEF = { lang: 'tc', books: [1], excluded: [], customs: [], imgsOff: [], showHints: true, storyTimer: 120, noRepeat: true };
+function loadS() { try { return Object.assign({}, DEF, JSON.parse(localStorage.getItem(LS_KEY) || '{}')); } catch (e) { return Object.assign({}, DEF); } }
+let S = loadS();
+function saveS() { try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) {} }
+
+/* ================= 轉繁簡（自訂語法點／故事句子用） ================= */
+let conv = { toTW: (x) => x, toCN: (x) => x };
+function loadOpenCC() {
+  const sc = document.createElement('script');
+  sc.src = 'https://cdn.jsdelivr.net/npm/opencc-js@1.0.5/dist/umd/full.js';
+  sc.onload = () => { try { conv.toTW = OpenCC.Converter({ from: 'cn', to: 'tw' }); conv.toCN = OpenCC.Converter({ from: 'tw', to: 'cn' }); } catch (e) {} };
+  document.head.appendChild(sc);
+}
+/* 老師可以打繁體或簡體：tc＝簡轉繁、sc＝繁轉簡，兩種輸入都能得到兩個版本（沒網路時兩邊都用原文）。 */
+const both = (s) => ({ tc: conv.toTW(s), sc: conv.toCN(s) });
+
+/* ================= 連線層 ================= */
+const FB = { cfg: { apiKey: 'AIzaSyC_YSDn2OH6_GKKwCq0d8QFNl3fYXzTC60', authDomain: 'memorma-24dab.firebaseapp.com', projectId: 'memorma-24dab', appId: '1:806709458465:web:f0d12acb2f911f2f165560' }, V: '10.12.2' };
+const COL = 'sentence_rooms';
+let fbp = null;
+function fb() {
+  if (fbp) return fbp;
+  fbp = (async () => {
+    const CDN = 'https://www.gstatic.com/firebasejs/' + FB.V + '/';
+    const A = await import(CDN + 'firebase-app.js');
+    const Au = await import(CDN + 'firebase-auth.js');
+    const F = await import(CDN + 'firebase-firestore.js');
+    const app = A.initializeApp(FB.cfg, 'sentencedraw');
+    const auth = Au.getAuth(app);
+    if (!auth.currentUser) await Au.signInAnonymously(auth); else await auth.authStateReady();
+    return { F, db: F.getFirestore(app), uid: auth.currentUser.uid };
+  })().catch((e) => { fbp = null; throw e; });
+  return fbp;
+}
+const rnd4 = () => String(Math.floor(1000 + Math.random() * 9000));
+
+const FireSync = {
+  async create(doc) {
+    const { F, db, uid } = await fb();
+    for (let i = 0; i < 12; i++) {
+      const code = rnd4();
+      try {
+        await F.setDoc(F.doc(db, COL, code), Object.assign({ code, hostUid: uid, createdAt: F.serverTimestamp(), expireAt: F.Timestamp.fromMillis(Date.now() + 6 * 3600e3) }, doc));
+        return code;
+      } catch (e) { if (e && e.code !== 'permission-denied') throw e; }
+    }
+    throw new Error('no-code');
+  },
+  async publish(code, doc) { const { F, db } = await fb(); await F.updateDoc(F.doc(db, COL, code), doc); },
+  async close(code) { const { F, db } = await fb(); await F.deleteDoc(F.doc(db, COL, code)); },
+  async subscribe(code, cb, errcb) {
+    const { F, db } = await fb();
+    return F.onSnapshot(F.doc(db, COL, code), (snap) => {
+      const d = snap.exists() ? snap.data() : null;
+      if (d && d.expireAt && d.expireAt.toMillis && d.expireAt.toMillis() < Date.now()) return cb(null);
+      cb(d);
+    }, (e) => errcb && errcb(e));
+  },
+};
+/* 測試用：同一個瀏覽器的不同分頁當作老師和學生 */
+const LocalSync = {
+  async create(doc) { const code = rnd4(); localStorage.setItem('sd_room_' + code, JSON.stringify(Object.assign({ code }, doc))); return code; },
+  async publish(code, doc) { const k = 'sd_room_' + code; const old = JSON.parse(localStorage.getItem(k) || '{}'); localStorage.setItem(k, JSON.stringify(Object.assign(old, doc))); },
+  async close(code) { localStorage.removeItem('sd_room_' + code); },
+  async subscribe(code, cb) {
+    const k = 'sd_room_' + code;
+    const read = () => { const v = localStorage.getItem(k); cb(v ? JSON.parse(v) : null); };
+    const h = (e) => { if (e.key === k) read(); };
+    window.addEventListener('storage', h); read();
+    return () => window.removeEventListener('storage', h);
+  },
+};
+const Sync = LOCAL ? LocalSync : FireSync;
+
+/* ================= 狀態 ================= */
+let role = null;                // 'teacher' | 'student'
+let tab = 'sentence';
+let room = null;                // 老師：{code}
+let roomBusy = false;
+let cur = { mode: 'sentence', img: null, g: null, story: null, timerSec: null, seq: 0 };
+let storyDraft = '';
+let timerPick = null;           // 老師選的倒數秒數
+let rolling = false;
+let usedG = new Set();
+let lastImg = null;
+let teacherDataReady = false;
+let sUnsub = null, sState = null, sCode = null, sErr = '';
+let clock = { end: 0, sec: 0, h: null, lastSeq: -1 };
+
+const IMGS = () => window.SD_IMAGES || [];
+const imgById = (id) => IMGS().find((i) => i.id === id);
+const G = () => window.GRAMMAR_LITE;
+
+/* ================= 老師資料（只有老師端才載入） ================= */
+function loadScript(src) { return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('load ' + src)); document.head.appendChild(s); }); }
+async function ensureTeacherData() {
+  if (teacherDataReady) return;
+  await Promise.all([loadScript('grammar-lite.js'), loadScript('hints.js')]);
+  window.SD_RULEX = (window.SD_RULES || []).map((r) => ({ re: new RegExp(r.re), s: r.s }));
+  teacherDataReady = true;
+}
+
+/* ================= 語法點池 ================= */
+function levelOf(b) { return (G().books || {})[b] || ''; }
+function tagOf(p) { return t('book') + p.b + t('bookUnit') + '・' + levelOf(p.b) + '・' + t('book') + p.l + t('lesson'); }
+function pool() {
+  const ex = new Set(S.excluded);
+  const P = G().points.filter((p) => S.books.includes(p.b) && !ex.has(p.id)).map((p) => ({ id: p.id, tc: p.t, sc: p.ts, tagB: p.b, tagL: p.l, ex: p.ex || [] }));
+  S.customs.filter((c) => c.on).forEach((c) => P.push({ id: c.id, tc: c.tc, sc: c.sc, tagB: 0, tagL: 0, ex: c.ex ? [{ c: c.ex, s: c.exs || c.ex }] : [], custom: true }));
+  return P;
+}
+function enabledImgs() { return IMGS().filter((i) => !S.imgsOff.includes(i.id)); }
+const gText = (g) => (SC() ? g.sc : g.tc);
+function gTag(g) { return g.custom ? t('custom') : t('book') + g.tagB + t('bookUnit') + '・' + levelOf(g.tagB) + '・' + t('book') + g.tagL + t('lesson'); }
+
+/* ================= 畫面外框 ================= */
+const app = $('#app');
+function toast(m) { const e = $('#toast'); e.textContent = m; e.classList.remove('hide'); clearTimeout(toast.h); toast.h = setTimeout(() => e.classList.add('hide'), 2200); }
+function langBtn() { return '<button class="chip" data-a="lang">' + (S.lang === 'sc' ? '繁' : '简') + '</button>'; }
+
+function render() {
+  document.documentElement.lang = S.lang === 'sc' ? 'zh-Hans' : 'zh-Hant';
+  document.title = t('title');
+  if (!role) return renderHome();
+  if (role === 'teacher') return renderTeacher();
+  return renderStudent();
+}
+
+/* ---------- 首頁 ---------- */
+function renderHome() {
+  app.innerHTML =
+    '<div class="top"><span class="brand"></span>' + langBtn() + '</div>' +
+    '<div class="home"><h1>' + t('title') + '</h1><p>' + t('sub') + '</p>' +
+    '<button class="btn primary" data-a="teacher">' + t('iamT') + '</button>' +
+    '<button class="btn" data-a="student">' + t('iamS') + '</button>' +
+    '<div class="join hide" id="joinBox"><input id="joinIn" inputmode="numeric" maxlength="4" placeholder="' + t('roomNo') + '" autocomplete="off"><button class="btn primary" data-a="join">' + t('join') + '</button></div>' +
+    '<div class="err" id="joinErr"></div></div>';
+  const m = location.search.match(/[?&]room=(\d{4})/);
+  if (m && !role) { $('#joinBox').classList.remove('hide'); $('#joinIn').value = m[1]; }
+}
+
+/* ---------- 卡片 ---------- */
+function imgCard(imgId) {
+  const im = imgById(imgId);
+  if (!im) return '<div class="card img"><div class="lab">' + t('lblImg') + '</div><div class="empty">—</div></div>';
+  return '<div class="card img"><div class="lab">' + t('lblImg') + '</div><img src="' + esc(im.src) + '" alt="' + esc(SC() ? im.name.sc : im.name.tc) + '"><div class="cap">' + esc(SC() ? im.name.sc : im.name.tc) + '</div></div>';
+}
+function gramCard(g, waitKey) {
+  if (!g) return '<div class="card gram"><div class="lab">' + t('lblGram') + '</div><div class="body"><div class="empty">' + t(waitKey) + '</div></div></div>';
+  return '<div class="card gram"><div class="lab">' + t('lblGram') + '</div><div class="body"><div class="gtitle">' + esc(g.title) + '</div><div class="gtag">' + esc(g.tag) + '</div></div></div>';
+}
+function timerBox(sec) {
+  if (sec == null) return '';
+  const m = Math.floor(sec / 60), s = sec % 60;
+  return '<div class="timer' + (sec <= 10 && sec > 0 ? ' low' : '') + (sec === 0 ? ' low' : '') + '" id="timerBox">' + (sec === 0 ? t('timeUp') : String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0')) + '</div>';
+}
+
+/* ---------- 老師 ---------- */
+function roomBar() {
+  if (room) {
+    const url = location.origin + location.pathname + '?room=' + room.code + (LOCAL ? '&local=1' : '');
+    return '<div class="roombar"><span class="pill live">' + t('live') + '</span><span class="note">' + t('roomLabel') + '</span><span class="code" id="roomCode">' + room.code + '</span>' +
+      '<span class="note grow">' + t('roomHelp') + '</span><button class="btn small" data-a="copylink" data-url="' + esc(url) + '">' + t('copyLink') + '</button><button class="btn small danger" data-a="endroom">' + t('endRoom') + '</button></div>';
+  }
+  return '<div class="roombar"><span class="pill">' + t('online') + '</span><span class="note grow">' + (roomBusy ? t('creating') : t('netOffer')) + '</span><button class="btn small primary" data-a="openroom"' + (roomBusy ? ' disabled' : '') + '>' + t('openRoom') + '</button></div>';
+}
+function curG() { return cur.g ? { title: gText(cur.g), tag: gTag(cur.g) } : null; }
+
+function hintsHtml() {
+  if (!S.showHints) {
+    return '<div class="thidden">🔒 ' + t('hiddenBar') + '<button class="btn small" data-a="togglehints">' + t('show') + '</button></div>';
+  }
+  const im = imgById(cur.img);
+  let inner = '';
+  if (cur.mode === 'sentence' && cur.g && im) {
+    const rule = (window.SD_RULEX || []).find((r) => r.re.test(cur.g.tc));
+    inner += '<div class="sub">' + t('sugLab') + '</div>';
+    inner += rule ? '<div class="sug">' + esc(SC() ? rule.s[im.id].sc : rule.s[im.id].tc) + '</div>' : '<div class="note">' + t('noSug') + '</div>';
+    const exs = (cur.g.ex || []).slice(0, 2);
+    inner += '<div class="sub">' + t('exLab') + '</div>';
+    inner += exs.length ? '<ul class="exl">' + exs.map((e) => '<li>' + esc(SC() ? e.s : e.c) + '</li>').join('') + '</ul>' : '<div class="note">' + t('customNoEx') + '</div>';
+  }
+  if (im) {
+    inner += '<div class="sub">' + t('wordsLab') + '</div><div class="words">' + im.words.map((w) => '<span>' + esc(SC() ? w.sc : w.tc) + '</span>').join('') + '</div>';
+  }
+  if (cur.mode === 'story') inner += '<div class="sub">' + t('storyAid') + '</div>';
+  if (!inner) inner = '<div class="note">—</div>';
+  return '<div class="tonly"><h3>🔒 ' + t('tonlyTitle') + '<button class="btn small" data-a="togglehints">' + t('hide') + '</button></h3>' + inner + '</div>';
+}
+
+function renderTeacher() {
+  if (!teacherDataReady) { app.innerHTML = '<div class="empty">…</div>'; ensureTeacherData().then(render).catch(() => { app.innerHTML = '<div class="empty">' + t('connFail') + '</div>'; }); return; }
+  const tabs = [['sentence', 'tabS'], ['story', 'tabStory'], ['set', 'tabSet']]
+    .map(([k, l]) => '<button class="chip' + (tab === k ? ' on' : '') + '" data-a="tab" data-v="' + k + '">' + t(l) + '</button>').join('');
+  let body = '';
+  if (tab === 'sentence') body = teacherSentence();
+  else if (tab === 'story') body = teacherStory();
+  else body = teacherSettings();
+  app.innerHTML =
+    '<div class="top"><span class="brand">' + t('title') + '</span>' + langBtn() + '<button class="chip" data-a="home">' + t('back') + '</button></div>' +
+    roomBar() + '<div class="tabs">' + tabs + '</div>' + body;
+  if (tab === 'story') { const ta = $('#storyIn'); if (ta) ta.value = storyDraft; }
+  if (tab === 'set') applyPlistFilter();
+  startLocalClock();
+}
+
+function teacherSentence() {
+  const g = cur.mode === 'sentence' ? curG() : null;
+  const img = cur.mode === 'sentence' ? cur.img : null;
+  return '<div class="drawrow"><button class="draw" data-a="draw"' + (rolling ? ' disabled' : '') + '>' + (rolling ? t('drawing') : t('draw')) + '</button>' +
+    '<span class="note">' + poolInfo() + '</span></div>' +
+    '<div class="cards' + (rolling ? ' rolling' : '') + '" id="cards">' + (img ? imgCard(img) : '<div class="card img"><div class="lab">' + t('lblImg') + '</div><div class="empty">' + t('waitT') + '</div></div>') + gramCard(g, 'waitT') + '</div>' +
+    (cur.mode === 'sentence' && cur.img ? '<p class="note" style="text-align:center;margin:10px 0 0">' + t('askSentence') + '</p>' : '') +
+    (cur.mode === 'sentence' ? hintsHtml() : '');
+}
+function poolInfo() { return t('setRange') + '：' + pool().length + t('pool') + ' × ' + enabledImgs().length + t('imgsN'); }
+
+function teacherStory() {
+  const isStory = cur.mode === 'story';
+  const opts = [0, 60, 120, 180, 300].map((s) => '<option value="' + s + '"' + ((timerPick == null ? S.storyTimer : timerPick) === s ? ' selected' : '') + '>' + (s ? s / 60 + ' ' + t('min') : t('timerOff')) + '</option>').join('');
+  const show = isStory && cur.story;
+  return '<div class="sec"><h2>' + t('storyIn') + '</h2><textarea id="storyIn" placeholder="' + esc(t('storyPh')) + '"></textarea>' +
+    '<div class="row" style="margin-top:8px"><button class="btn primary" data-a="storygo">' + t('storyGo') + '</button><button class="btn" data-a="storyimg">' + t('storyImg') + '</button>' +
+    '<span class="note">' + t('timerLab') + '</span><select id="timerSel" data-a="timersel">' + opts + '</select>' +
+    '<button class="btn" data-a="timerstart">' + t('timerStart') + '</button><button class="btn" data-a="timerstop">' + t('timerStop') + '</button></div></div>' +
+    (isStory && cur.img ? '<div class="cards">' + imgCard(cur.img) + '<div class="story"><div class="lab">' + t('storyLab') + '</div><div class="s">' + esc(show ? (SC() ? cur.story.sc : cur.story.tc) : '—') + '</div><div class="ask">' + t('askStory') + '</div></div></div>' : '') +
+    (isStory ? timerBox(clock.end ? remain() : null) : '') +
+    (isStory ? hintsHtml() : '');
+}
+
+function teacherSettings() {
+  const bookChips = Object.keys(G().books).map((b) => '<button class="chip' + (S.books.includes(+b) ? ' on' : '') + '" data-a="book" data-v="' + b + '">' + t('book') + b + t('bookUnit') + ' ' + G().books[b] + '</button>').join('');
+  const byBook = {};
+  G().points.forEach((p) => { if (S.books.includes(p.b)) (byBook[p.b] = byBook[p.b] || []).push(p); });
+  const ex = new Set(S.excluded);
+  const fine = Object.keys(byBook).map((b) => {
+    const list = byBook[b];
+    const on = list.filter((p) => !ex.has(p.id)).length;
+    return '<details class="bk"><summary>' + t('book') + b + t('bookUnit') + ' ' + G().books[b] + '　<span class="note">' + on + '/' + list.length + '</span>' +
+      '<span style="margin-left:auto"></span><button class="btn small" data-a="bookall" data-v="' + b + '">' + t('allOn') + '</button><button class="btn small" data-a="booknone" data-v="' + b + '">' + t('allOff') + '</button></summary>' +
+      '<div class="plist">' + list.map((p) => '<label data-q="' + esc((p.t + ' ' + p.ts + ' ' + p.id).toLowerCase()) + '"><input type="checkbox" data-a="pt" data-v="' + p.id + '"' + (ex.has(p.id) ? '' : ' checked') + '><span class="id">' + p.id + '</span><span>' + esc(SC() ? p.ts : p.t) + '</span></label>').join('') + '</div></details>';
+  }).join('');
+  const customs = S.customs.map((c) => '<div class="cust"><input type="checkbox" data-a="custon" data-v="' + c.id + '"' + (c.on ? ' checked' : '') + '><span class="t">' + esc(SC() ? c.sc : c.tc) + (c.ex ? '<br><span class="note">' + esc(SC() ? (c.exs || c.ex) : c.ex) + '</span>' : '') + '</span><button class="btn small danger" data-a="custdel" data-v="' + c.id + '">' + t('del') + '</button></div>').join('');
+  const imgs = IMGS().map((i) => '<label><img src="' + esc(i.src) + '" alt=""><span><input type="checkbox" data-a="img" data-v="' + i.id + '"' + (S.imgsOff.includes(i.id) ? '' : ' checked') + '>' + esc(SC() ? i.name.sc : i.name.tc) + '</span></label>').join('');
+  return '<div class="sec"><h2>' + t('setRange') + '：' + pool().length + t('pool') + ' × ' + enabledImgs().length + t('imgsN') + '</h2></div>' +
+    '<div class="sec"><h2>' + t('setLevel') + '</h2><div class="row">' + bookChips + '</div><p class="note" style="margin:8px 0 0">' + t('setLevelNote') + '</p></div>' +
+    '<div class="sec"><h2>' + t('setFine') + '</h2><div class="row" style="margin-bottom:6px"><input type="text" id="plSearch" placeholder="' + esc(t('search')) + '" style="flex:1"></div>' + (fine || '<p class="note">—</p>') + '</div>' +
+    '<div class="sec"><h2>' + t('setCustom') + '</h2><div class="row"><input type="text" id="cTitle" placeholder="' + esc(t('cTitle')) + '" style="flex:1;min-width:200px"><input type="text" id="cEx" placeholder="' + esc(t('cEx')) + '" style="flex:1;min-width:200px"><button class="btn primary" data-a="custadd">' + t('add') + '</button></div>' + customs + '</div>' +
+    '<div class="sec"><h2>' + t('setImgs') + '</h2><div class="imgs">' + imgs + '</div></div>' +
+    '<div class="sec"><h2>' + t('setOther') + '</h2><label class="row"><input type="checkbox" data-a="norepeat"' + (S.noRepeat ? ' checked' : '') + '> ' + t('noRepeat') + '</label></div>';
+}
+function applyPlistFilter() {
+  const q = (($('#plSearch') || {}).value || '').trim().toLowerCase();
+  document.querySelectorAll('.plist label').forEach((l) => { l.style.display = !q || l.dataset.q.includes(q) ? '' : 'none'; });
+  if (q) document.querySelectorAll('details.bk').forEach((d) => { d.open = true; });
+}
+
+/* ---------- 學生 ---------- */
+function renderStudent() {
+  const top = '<div class="top"><span class="brand">' + t('title') + '</span>' + (sCode ? '<span class="pill live">' + t('roomLabel') + ' ' + sCode + '</span>' : '') + langBtn() + '<button class="chip" data-a="leave">' + t('leave') + '</button></div>';
+  if (sErr) { app.innerHTML = top + '<div class="empty">' + esc(sErr) + '</div>'; return; }
+  const d = sState;
+  let body = '';
+  if (!d || (!d.g && !d.story)) {
+    body = '<div class="cards">' + '<div class="card img"><div class="lab">' + t('lblImg') + '</div><div class="empty">' + t('waitS') + '</div></div>' + gramCard(null, 'waitS') + '</div>';
+  } else if (d.mode === 'story') {
+    const timerSec = clock.end ? remain() : null;
+    body = '<div class="cards">' + imgCard(d.img) + '<div class="story"><div class="lab">' + t('storyLab') + '</div><div class="s">' + esc(d.story ? (SC() ? d.story.sc : d.story.tc) : '—') + '</div><div class="ask">' + t('askStory') + '</div></div></div>' + timerBox(timerSec);
+  } else {
+    const g = d.g ? { title: SC() ? d.g.sc : d.g.tc, tag: d.g.custom ? t('custom') : (d.g.b ? t('book') + d.g.b + t('bookUnit') + '・' + (d.g.lv || '') + '・' + t('book') + d.g.l + t('lesson') : '') } : null;
+    body = '<div class="cards">' + imgCard(d.img) + gramCard(g, 'waitS') + '</div><p class="note" style="text-align:center;margin-top:12px;font-size:15px">' + t('askSentence') + '</p>';
+  }
+  app.innerHTML = top + body;
+  startLocalClock();
+}
+
+/* ================= 倒數計時 ================= */
+function remain() { return Math.max(0, Math.ceil((clock.end - Date.now()) / 1000)); }
+function startLocalClock() {
+  if (clock.h) clearInterval(clock.h);
+  if (!clock.end) return;
+  clock.h = setInterval(() => {
+    const r = remain();
+    const box = $('#timerBox');
+    if (box) { const m = Math.floor(r / 60), s = r % 60; box.textContent = r === 0 ? t('timeUp') : String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0'); box.classList.toggle('low', r <= 10); }
+    if (r === 0) { clearInterval(clock.h); clock.h = null; }
+  }, 250);
+}
+function setClock(sec) {
+  if (sec && sec > 0) clock.end = Date.now() + sec * 1000; else clock.end = 0;
+  if (clock.h) { clearInterval(clock.h); clock.h = null; }
+}
+
+/* ================= 老師動作 ================= */
+function roomDoc() {
+  return {
+    mode: cur.mode, img: cur.img || null,
+    g: cur.g ? { tc: cur.g.tc, sc: cur.g.sc, b: cur.g.tagB || 0, l: cur.g.tagL || 0, lv: cur.g.tagB ? levelOf(cur.g.tagB) : '', custom: !!cur.g.custom } : null,
+    story: cur.story || null, timerSec: cur.timerSec || null, seq: cur.seq,
+  };
+}
+async function push() {
+  if (!room) return;
+  try { await Sync.publish(room.code, roomDoc()); }
+  catch (e) { toast(t('connFail')); }
+}
+const pick = (a) => a[Math.floor(Math.random() * a.length)];
+
+function chooseNext() {
+  const P = pool(), I = enabledImgs();
+  if (!P.length || !I.length) return null;
+  let cand = S.noRepeat ? P.filter((p) => !usedG.has(p.id)) : P;
+  if (!cand.length) { usedG = new Set(); cand = P; }
+  const g = pick(cand);
+  let ic = I.length > 1 ? I.filter((i) => i.id !== lastImg) : I;
+  const im = pick(ic);
+  return { g, im };
+}
+
+function drawSentence() {
+  if (rolling) return;
+  const nxt = chooseNext();
+  if (!nxt) { toast(t('poolEmpty')); return; }
+  rolling = true; tab = 'sentence'; cur.mode = 'sentence'; cur.story = null; cur.timerSec = null; setClock(0);
+  render();
+  const P = pool(), I = enabledImgs();
+  let n = 0;
+  const tick = setInterval(() => {
+    n++;
+    const cards = $('#cards');
+    if (cards) {
+      const im = pick(I), g = pick(P);
+      const imgEl = cards.querySelector('img'); if (imgEl) imgEl.src = im.src;
+      const gt = cards.querySelector('.gtitle'); if (gt) gt.textContent = gText(g);
+      if (!imgEl || !gt) { cards.innerHTML = imgCard(im.id) + gramCard({ title: gText(g), tag: '' }, 'waitT'); }
+    }
+    if (n >= 11) {
+      clearInterval(tick);
+      rolling = false;
+      cur.img = nxt.im.id; cur.g = nxt.g; cur.seq++;
+      usedG.add(nxt.g.id); lastImg = nxt.im.id;
+      render(); push();
+    }
+  }, 75);
+}
+
+function storyText() { const v = (($('#storyIn') || {}).value || storyDraft || '').trim(); storyDraft = v; return v; }
+function storyGo(onlyImg) {
+  const v = storyText();
+  if (!onlyImg && !v) { toast(t('storyNeed')); return; }
+  const I = enabledImgs();
+  if (!I.length) { toast(t('poolEmpty')); return; }
+  const im = (onlyImg && cur.img && I.length === 1) ? I[0] : pick(I.length > 1 ? I.filter((i) => i.id !== cur.img) : I);
+  cur.mode = 'story'; cur.img = im.id; cur.g = null;
+  if (v) cur.story = both(v); else if (!cur.story) { toast(t('storyNeed')); return; }
+  cur.timerSec = null; setClock(0); cur.seq++;
+  render(); push();
+}
+function timerStart() {
+  const sel = $('#timerSel'); const sec = +(sel ? sel.value : S.storyTimer);
+  timerPick = sec; S.storyTimer = sec; saveS();
+  if (!sec) { toast(t('timerOff')); return; }
+  if (cur.mode !== 'story' || !cur.img) { toast(t('storyNeed')); return; }
+  cur.timerSec = sec; cur.seq++; setClock(sec); render(); push();
+}
+function timerStop() { cur.timerSec = null; cur.seq++; setClock(0); render(); push(); }
+
+async function openRoom() {
+  if (roomBusy || room) return;
+  roomBusy = true; render();
+  try { const code = await Sync.create(roomDoc()); room = { code }; }
+  catch (e) { toast(t('connFail')); console.error(e); }
+  roomBusy = false; render();
+}
+async function endRoom() { if (!room) return; const c = room.code; room = null; try { await Sync.close(c); } catch (e) {} render(); }
+
+/* ================= 學生動作 ================= */
+async function joinRoom(code) {
+  sErr = ''; sState = null; sCode = code; clock.lastSeq = -1; setClock(0);
+  if (sUnsub) { try { sUnsub(); } catch (e) {} sUnsub = null; }
+  role = 'student'; render();
+  try {
+    sUnsub = await Sync.subscribe(code, (d) => {
+      if (!d) { sErr = sState ? t('expired') : t('badRoom'); sState = null; render(); return; }
+      sErr = ''; sState = d;
+      if (d.seq !== clock.lastSeq) { clock.lastSeq = d.seq; setClock(d.timerSec && d.mode === 'story' ? d.timerSec : 0); }
+      render();
+    }, () => { sErr = t('connFail'); render(); });
+  } catch (e) { sErr = t('connFail'); render(); }
+}
+function leaveStudent() { if (sUnsub) { try { sUnsub(); } catch (e) {} sUnsub = null; } sState = null; sCode = null; sErr = ''; role = null; setClock(0); render(); }
+
+/* ================= 事件 ================= */
+document.addEventListener('click', async (e) => {
+  const el = e.target.closest('[data-a]'); if (!el) return;
+  const a = el.dataset.a, v = el.dataset.v;
+  if (el.tagName === 'SUMMARY' || el.closest('summary')) { if (a === 'bookall' || a === 'booknone') e.preventDefault(); }
+  switch (a) {
+    case 'lang': S.lang = S.lang === 'sc' ? 'tc' : 'sc'; saveS(); if (tab === 'story') storyText(); render(); break;
+    case 'teacher': role = 'teacher'; tab = 'sentence'; render(); break;
+    case 'student': $('#joinBox').classList.remove('hide'); $('#joinIn').focus(); break;
+    case 'join': { const c = ($('#joinIn').value || '').trim(); if (!/^\d{4}$/.test(c)) { $('#joinErr').textContent = t('badRoom'); break; } joinRoom(c); break; }
+    case 'home': if (room) { if (!confirm(t('endRoom') + '？')) break; await endRoom(); } role = null; cur = { mode: 'sentence', img: null, g: null, story: null, timerSec: null, seq: 0 }; setClock(0); render(); break;
+    case 'leave': leaveStudent(); break;
+    case 'tab': if (tab === 'story') storyText(); tab = v; render(); break;
+    case 'draw': drawSentence(); break;
+    case 'togglehints': S.showHints = !S.showHints; saveS(); render(); break;
+    case 'storygo': storyGo(false); break;
+    case 'storyimg': storyGo(true); break;
+    case 'timerstart': timerStart(); break;
+    case 'timerstop': timerStop(); break;
+    case 'openroom': openRoom(); break;
+    case 'endroom': endRoom(); break;
+    case 'copylink': try { await navigator.clipboard.writeText(el.dataset.url); toast(t('copied')); } catch (er) { prompt('', el.dataset.url); } break;
+    case 'book': { const b = +v; S.books = S.books.includes(b) ? S.books.filter((x) => x !== b) : S.books.concat(b).sort(); saveS(); render(); break; }
+    case 'bookall': { const ids = G().points.filter((p) => p.b === +v).map((p) => p.id); S.excluded = S.excluded.filter((x) => !ids.includes(x)); saveS(); keepOpenRender(); break; }
+    case 'booknone': { const ids = G().points.filter((p) => p.b === +v).map((p) => p.id); S.excluded = Array.from(new Set(S.excluded.concat(ids))); saveS(); keepOpenRender(); break; }
+    case 'custadd': {
+      const ti = ($('#cTitle').value || '').trim(), ex = ($('#cEx').value || '').trim();
+      if (!ti) break;
+      const T2 = both(ti), E2 = ex ? both(ex) : null;
+      S.customs.push({ id: 'c' + Date.now(), tc: T2.tc, sc: T2.sc, ex: E2 ? E2.tc : '', exs: E2 ? E2.sc : '', on: true }); saveS(); render(); break;
+    }
+    case 'custdel': S.customs = S.customs.filter((c) => c.id !== v); saveS(); render(); break;
+  }
+});
+function keepOpenRender() {
+  const open = Array.from(document.querySelectorAll('details.bk')).map((d) => d.open);
+  const q = ($('#plSearch') || {}).value || '';
+  render();
+  document.querySelectorAll('details.bk').forEach((d, i) => { d.open = !!open[i]; });
+  if ($('#plSearch')) { $('#plSearch').value = q; applyPlistFilter(); }
+}
+document.addEventListener('change', (e) => {
+  const el = e.target; const a = el.dataset && el.dataset.a; if (!a) return;
+  if (a === 'pt') { const id = el.dataset.v; S.excluded = el.checked ? S.excluded.filter((x) => x !== id) : S.excluded.concat(id); saveS(); updateRange(); }
+  else if (a === 'custon') { const c = S.customs.find((x) => x.id === el.dataset.v); if (c) { c.on = el.checked; saveS(); updateRange(); } }
+  else if (a === 'img') { const id = el.dataset.v; S.imgsOff = el.checked ? S.imgsOff.filter((x) => x !== id) : S.imgsOff.concat(id); saveS(); updateRange(); }
+  else if (a === 'norepeat') { S.noRepeat = el.checked; saveS(); }
+  else if (a === 'timersel') { timerPick = +el.value; S.storyTimer = timerPick; saveS(); }
+});
+function updateRange() {
+  const h = document.querySelector('.sec h2'); if (h) h.textContent = t('setRange') + '：' + pool().length + t('pool') + ' × ' + enabledImgs().length + t('imgsN');
+  document.querySelectorAll('details.bk').forEach((d) => { const boxes = d.querySelectorAll('.plist input'); const on = Array.from(boxes).filter((b) => b.checked).length; const n = d.querySelector('summary .note'); if (n) n.textContent = on + '/' + boxes.length; });
+}
+document.addEventListener('input', (e) => {
+  if (e.target.id === 'plSearch') applyPlistFilter();
+  if (e.target.id === 'storyIn') storyDraft = e.target.value;
+});
+document.addEventListener('keydown', (e) => {
+  if (e.target.id === 'joinIn' && e.key === 'Enter') { const c = e.target.value.trim(); if (/^\d{4}$/.test(c)) joinRoom(c); else $('#joinErr').textContent = t('badRoom'); return; }
+  if (role === 'teacher' && tab === 'sentence' && (e.key === ' ' || e.key === 'Enter') && !/INPUT|TEXTAREA|SELECT|BUTTON|SUMMARY/.test(e.target.tagName)) { e.preventDefault(); drawSentence(); }
+});
+window.addEventListener('beforeunload', () => { if (room && !LOCAL) { /* 房間 6 小時後會自動過期 */ } });
+
+loadOpenCC();
+render();
+</script>
+</body>
+</html>

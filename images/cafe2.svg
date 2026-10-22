@@ -1,0 +1,87 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+<defs>
+<linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#6a4731"/><stop offset="1" stop-color="#34211a"/></linearGradient>
+<radialGradient id="bk"><stop offset="0" stop-color="#ffe3a6" stop-opacity="0.95"/><stop offset="1" stop-color="#ffd27a" stop-opacity="0"/></radialGradient>
+<linearGradient id="wood" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b9824f"/><stop offset="1" stop-color="#6f4425"/></linearGradient>
+<radialGradient id="skin" cx="0.45" cy="0.4" r="0.75"><stop offset="0" stop-color="#f7d3b8"/><stop offset="0.7" stop-color="#e9b896"/><stop offset="1" stop-color="#d49a76"/></radialGradient>
+<linearGradient id="neck" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c98f6c"/><stop offset="1" stop-color="#e3ae8c"/></linearGradient>
+<linearGradient id="hair" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4a2e20"/><stop offset="0.5" stop-color="#2c1a12"/><stop offset="1" stop-color="#1c110c"/></linearGradient>
+<linearGradient id="sweater" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5f8f88"/><stop offset="0.6" stop-color="#477a74"/><stop offset="1" stop-color="#2f5853"/></linearGradient>
+<radialGradient id="cup" cx="0.4" cy="0.3" r="0.8"><stop offset="0" stop-color="#ffffff"/><stop offset="0.7" stop-color="#ece6de"/><stop offset="1" stop-color="#b9b0a4"/></radialGradient>
+<radialGradient id="coffee" cx="0.45" cy="0.4" r="0.7"><stop offset="0" stop-color="#d9a979"/><stop offset="1" stop-color="#7a4a2a"/></radialGradient>
+<radialGradient id="plate" cx="0.5" cy="0.4" r="0.7"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#c9c3ba"/></radialGradient>
+<linearGradient id="cake" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff4e2"/><stop offset="1" stop-color="#f0d6ae"/></linearGradient>
+<radialGradient id="straw" cx="0.35" cy="0.3" r="0.8"><stop offset="0" stop-color="#ff6a5f"/><stop offset="1" stop-color="#b3201c"/></radialGradient>
+<radialGradient id="cheek"><stop offset="0" stop-color="#e98f86" stop-opacity="0.5"/><stop offset="1" stop-color="#e98f86" stop-opacity="0"/></radialGradient>
+<filter id="b12"><feGaussianBlur stdDeviation="12"/></filter>
+<filter id="b4"><feGaussianBlur stdDeviation="4"/></filter>
+<filter id="b2"><feGaussianBlur stdDeviation="2"/></filter>
+<filter id="b1"><feGaussianBlur stdDeviation="1.2"/></filter>
+</defs>
+<rect width="800" height="600" fill="url(#wall)"/>
+<g filter="url(#b12)">
+<circle cx="90" cy="110" r="70" fill="url(#bk)"/><circle cx="560" cy="90" r="60" fill="url(#bk)"/><circle cx="700" cy="200" r="80" fill="url(#bk)"/>
+<circle cx="130" cy="290" r="55" fill="url(#bk)"/><circle cx="640" cy="320" r="45" fill="url(#bk)"/><rect x="560" y="170" width="110" height="100" fill="#e9b872" opacity="0.45"/>
+</g>
+<!-- 頭髮（後面） -->
+<path d="M262 215 C255 120 310 78 372 84 C440 90 466 150 458 235 C456 300 470 345 448 392 L248 392 C232 340 268 290 262 215Z" fill="url(#hair)"/>
+<!-- 身體 -->
+<path d="M180 600 L180 470 C180 400 245 362 330 358 C415 362 490 400 490 470 L490 600Z" fill="url(#sweater)"/>
+<path d="M265 372 C300 392 360 392 396 372 L412 400 C370 424 292 424 250 400Z" fill="#3b6964"/>
+<g stroke="#2a4a46" stroke-width="2" opacity="0.35" fill="none"><path d="M215 470 L215 600"/><path d="M240 450 L240 600"/><path d="M420 450 L420 600"/><path d="M450 470 L450 600"/><path d="M290 430 Q330 445 370 430"/></g>
+<path d="M200 430 Q180 500 195 600" stroke="#7fb4ac" stroke-width="10" opacity="0.25" fill="none" filter="url(#b4)"/>
+<!-- 脖子 -->
+<path d="M300 300 L300 362 C318 380 345 380 362 362 L362 300Z" fill="url(#neck)"/>
+<path d="M300 330 C318 352 345 352 362 330 L362 362 C345 380 318 380 300 362Z" fill="#b97f5d" opacity="0.4"/>
+<!-- 臉 -->
+<ellipse cx="331" cy="222" rx="68" ry="82" fill="url(#skin)"/>
+<!-- 瀏海 -->
+<path d="M262 212 C262 140 300 112 344 114 C396 116 402 170 396 200 C378 160 340 142 300 156 C282 168 272 190 262 212Z" fill="url(#hair)"/>
+<path d="M300 130 C330 118 370 124 388 150" stroke="#6b4a37" stroke-width="3" fill="none" opacity="0.6"/>
+<!-- 髮髻 -->
+<ellipse cx="338" cy="68" rx="36" ry="30" fill="url(#hair)"/><path d="M312 60 C330 48 354 50 366 62" stroke="#6b4a37" stroke-width="3" fill="none" opacity="0.6"/>
+<!-- 兩側髮絲 -->
+<path d="M262 212 C256 260 264 300 282 330 C272 290 272 250 276 214Z" fill="url(#hair)"/>
+<path d="M399 212 C406 262 398 300 384 326 C392 290 392 250 388 214Z" fill="url(#hair)"/>
+<!-- 臉部 -->
+<ellipse cx="288" cy="256" rx="26" ry="16" fill="url(#cheek)"/><ellipse cx="376" cy="256" rx="26" ry="16" fill="url(#cheek)"/>
+<g fill="none" stroke="#2a1810" stroke-width="3.2" stroke-linecap="round">
+<path d="M293 226 Q307 238 321 227"/><path d="M345 227 Q359 238 373 226"/>
+</g>
+<g stroke="#2a1810" stroke-width="2" stroke-linecap="round"><path d="M294 227 l-5 -4"/><path d="M301 233 l-3 -5"/><path d="M372 226 l5 -4"/><path d="M365 233 l3 -5"/></g>
+<g fill="none" stroke="#3a2417" stroke-width="3.4" stroke-linecap="round" opacity="0.85"><path d="M288 204 Q304 195 322 203"/><path d="M345 203 Q362 195 378 204"/></g>
+<path d="M331 232 Q326 256 322 262 Q331 268 342 262" fill="none" stroke="#c48a68" stroke-width="2.4" stroke-linecap="round" opacity="0.8"/>
+<path d="M305 285 Q331 300 357 285" fill="none" stroke="#b5574f" stroke-width="3.4" stroke-linecap="round"/>
+<path d="M312 286 Q331 296 350 286 Q331 292 312 286Z" fill="#c76b63" opacity="0.7"/>
+<!-- 桌子 -->
+<rect x="0" y="448" width="800" height="152" fill="url(#wood)"/>
+<rect x="0" y="448" width="800" height="9" fill="#d8a574" opacity="0.7"/>
+<rect x="0" y="456" width="800" height="14" fill="#000" opacity="0.2" filter="url(#b4)"/>
+<!-- 手臂與手 -->
+<path d="M200 470 C210 520 270 560 340 548 L400 520 L380 480 L300 500 C260 500 240 480 240 450Z" fill="#477a74"/>
+<path d="M470 470 C470 520 440 550 400 548 L380 500 L420 484 C446 484 458 470 458 450Z" fill="#3b6964"/>
+<ellipse cx="385" cy="498" rx="32" ry="20" fill="url(#skin)" transform="rotate(-18 385 498)"/>
+<!-- 杯子 -->
+<ellipse cx="400" cy="548" rx="108" ry="22" fill="#000" opacity="0.3" filter="url(#b4)"/>
+<ellipse cx="400" cy="536" rx="92" ry="22" fill="url(#plate)"/>
+<ellipse cx="400" cy="533" rx="70" ry="15" fill="#e6e0d6"/>
+<path d="M358 468 L358 506 Q358 534 400 534 Q442 534 442 506 L442 468Z" fill="url(#cup)"/>
+<ellipse cx="400" cy="468" rx="42" ry="11" fill="#f3eee6"/>
+<ellipse cx="400" cy="470" rx="37" ry="8.5" fill="url(#coffee)"/>
+<path d="M442 478 Q474 476 474 498 Q474 518 440 514" fill="none" stroke="#d9d2c7" stroke-width="10" stroke-linecap="round"/>
+<ellipse cx="456" cy="496" rx="20" ry="26" fill="url(#skin)" transform="rotate(10 456 496)"/>
+<path d="M440 478 q16 -6 28 6 M440 492 q16 -4 26 8 M442 504 q14 -2 22 8" stroke="#c48a68" stroke-width="2" fill="none" opacity="0.7"/>
+<path d="M366 480 Q372 510 380 524" stroke="#fff" stroke-width="5" stroke-linecap="round" fill="none" opacity="0.5"/>
+<g opacity="0.5" filter="url(#b4)" fill="none" stroke="#fff" stroke-width="6" stroke-linecap="round"><path d="M392 452 C380 424 410 414 396 388"/><path d="M414 452 C404 428 428 420 418 400"/></g>
+<!-- 蛋糕 -->
+<ellipse cx="640" cy="548" rx="120" ry="26" fill="#000" opacity="0.3" filter="url(#b4)"/>
+<ellipse cx="636" cy="534" rx="108" ry="26" fill="url(#plate)"/>
+<ellipse cx="636" cy="532" rx="84" ry="18" fill="#e8e2d8"/>
+<path d="M572 510 L572 484 L624 462 L700 468 L704 512 Q636 536 572 510Z" fill="url(#cake)"/>
+<path d="M572 484 L624 462 L700 468 L702 480 L624 474 L572 498Z" fill="#fff9ee"/>
+<path d="M572 498 L624 474 L702 480" fill="none" stroke="#e08a9d" stroke-width="8" stroke-linejoin="round" opacity="0.9"/>
+<ellipse cx="632" cy="460" rx="24" ry="18" fill="url(#straw)"/>
+<path d="M618 449 L628 442 L632 449 L640 442 L648 450 Q632 455 618 449Z" fill="#3b8a3f"/>
+<ellipse cx="622" cy="456" rx="6" ry="3.5" fill="#fff" opacity="0.55"/>
+<rect width="800" height="600" fill="#1a0e08" opacity="0.1"/>
+</svg>

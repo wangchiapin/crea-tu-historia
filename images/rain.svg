@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+<defs>
+<linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1c2a3d"/><stop offset="0.6" stop-color="#3b4d66"/><stop offset="1" stop-color="#5a6b80"/></linearGradient>
+<linearGradient id="road" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3a424d"/><stop offset="1" stop-color="#171b22"/></linearGradient>
+<radialGradient id="lamp"><stop offset="0" stop-color="#fff3c4" stop-opacity="1"/><stop offset="0.25" stop-color="#ffd98a" stop-opacity="0.65"/><stop offset="1" stop-color="#ffc766" stop-opacity="0"/></radialGradient>
+<radialGradient id="win"><stop offset="0" stop-color="#ffd98a" stop-opacity="0.95"/><stop offset="1" stop-color="#ffb84d" stop-opacity="0"/></radialGradient>
+<linearGradient id="umb" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#8e1818"/><stop offset="0.35" stop-color="#d93a30"/><stop offset="0.6" stop-color="#e5493d"/><stop offset="1" stop-color="#8e1818"/></linearGradient>
+<linearGradient id="pole" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#2b2b2b"/><stop offset="0.5" stop-color="#6b6b6b"/><stop offset="1" stop-color="#222"/></linearGradient>
+<filter id="b10"><feGaussianBlur stdDeviation="10"/></filter>
+<filter id="b5"><feGaussianBlur stdDeviation="5"/></filter>
+<filter id="b2"><feGaussianBlur stdDeviation="2"/></filter>
+<filter id="b1"><feGaussianBlur stdDeviation="1"/></filter>
+</defs>
+<rect width="800" height="600" fill="url(#sky)"/>
+<g filter="url(#b5)">
+<rect x="0" y="120" width="170" height="300" fill="#222c3a"/><rect x="170" y="190" width="120" height="230" fill="#2a3547"/>
+<rect x="290" y="90" width="150" height="330" fill="#1f2937"/><rect x="440" y="170" width="130" height="250" fill="#2b3648"/>
+<rect x="570" y="110" width="230" height="310" fill="#212c3b"/>
+</g>
+<g filter="url(#b5)">
+<rect x="30" y="170" width="28" height="38" fill="#ffc766"/><rect x="85" y="170" width="28" height="38" fill="#ffd98a"/><rect x="30" y="250" width="28" height="38" fill="#ffd98a"/>
+<rect x="200" y="240" width="26" height="36" fill="#ffc766"/><rect x="330" y="150" width="28" height="36" fill="#ffd98a"/><rect x="385" y="230" width="28" height="36" fill="#ffc766"/>
+<rect x="330" y="310" width="28" height="36" fill="#ffd98a"/><rect x="470" y="230" width="26" height="36" fill="#ffd98a"/><rect x="610" y="170" width="30" height="38" fill="#ffc766"/>
+<rect x="700" y="260" width="30" height="38" fill="#ffd98a"/><rect x="620" y="320" width="30" height="38" fill="#ffc766"/>
+</g>
+<rect x="0" y="405" width="800" height="14" fill="#6c7788"/>
+<rect x="0" y="419" width="800" height="181" fill="url(#road)"/>
+<!-- reflections on wet road -->
+<g filter="url(#b10)" opacity="0.9">
+<ellipse cx="120" cy="470" rx="45" ry="60" fill="#ffc766" opacity="0.35"/><ellipse cx="360" cy="480" rx="50" ry="70" fill="#ffd98a" opacity="0.3"/>
+<ellipse cx="640" cy="475" rx="55" ry="65" fill="#ffc766" opacity="0.3"/><ellipse cx="560" cy="520" rx="80" ry="40" fill="#fff3c4" opacity="0.35"/>
+</g>
+<!-- lamp post (right) -->
+<rect x="684" y="150" width="9" height="270" fill="url(#pole)"/>
+<path d="M688 160 Q688 130 650 128" stroke="#444" stroke-width="7" fill="none"/>
+<circle cx="640" cy="132" r="95" fill="url(#lamp)"/>
+<ellipse cx="640" cy="134" rx="16" ry="10" fill="#fffbe6"/>
+<path d="M620 130 Q640 112 660 130Z" fill="#33383f"/>
+<!-- light shaft on wet road -->
+<path d="M560 420 L720 420 L760 600 L520 600Z" fill="#ffd98a" opacity="0.1" filter="url(#b5)"/>
+<!-- puddle -->
+<ellipse cx="400" cy="540" rx="230" ry="36" fill="#0f141b" opacity="0.7"/>
+<ellipse cx="400" cy="538" rx="215" ry="30" fill="#4f6178" opacity="0.55"/>
+<ellipse cx="520" cy="534" rx="90" ry="12" fill="#ffd98a" opacity="0.35" filter="url(#b2)"/>
+<g fill="none" stroke="#c9dbf0" stroke-width="1.6" opacity="0.7"><ellipse cx="300" cy="545" rx="26" ry="5"/><ellipse cx="300" cy="545" rx="14" ry="2.8"/><ellipse cx="470" cy="552" rx="30" ry="6"/><ellipse cx="470" cy="552" rx="16" ry="3"/><ellipse cx="380" cy="530" rx="20" ry="4"/></g>
+<!-- umbrella (open, standing on handle, seen from side slightly tilted) -->
+<g transform="translate(330 0) rotate(-8 70 400)">
+<ellipse cx="70" cy="545" rx="95" ry="14" fill="#000" opacity="0.4" filter="url(#b5)"/>
+<rect x="66" y="270" width="7" height="270" fill="url(#pole)"/>
+<path d="M69 540 Q69 565 45 565" stroke="#5a2b1c" stroke-width="9" fill="none" stroke-linecap="round"/>
+<path d="M-70 300 Q-70 160 70 150 Q210 160 210 300 Q190 275 160 290 Q140 270 115 292 Q92 272 70 292 Q48 272 25 292 Q0 270 -20 290 Q-45 275 -70 300Z" fill="url(#umb)"/>
+<g stroke="#7a1111" stroke-width="2" opacity="0.7" fill="none"><path d="M70 150 L-20 290"/><path d="M70 150 L25 292"/><path d="M70 150 L115 292"/><path d="M70 150 L160 290"/></g>
+<path d="M70 150 Q-10 170 -50 290" stroke="#ff8a7e" stroke-width="5" opacity="0.4" fill="none"/>
+<circle cx="70" cy="150" r="4.5" fill="#3a1a14"/>
+<g fill="#cfe6ff" opacity="0.8"><circle cx="20" cy="230" r="2.5"/><circle cx="100" cy="200" r="2.2"/><circle cx="150" cy="255" r="2.4"/><circle cx="55" cy="270" r="2"/><circle cx="125" cy="235" r="2"/></g>
+</g>
+<!-- rain -->
+<g stroke="#dbe9f7" stroke-width="1.4" opacity="0.5" stroke-linecap="round" filter="url(#b1)">
+<path d="M40 20 l-8 38 M110 80 l-8 38 M190 10 l-8 38 M260 120 l-8 38 M330 40 l-8 38 M410 150 l-8 38 M480 15 l-8 38 M550 100 l-8 38 M620 30 l-8 38 M700 150 l-8 38 M770 60 l-8 38 M70 220 l-8 38 M150 300 l-8 38 M230 250 l-8 38 M300 340 l-8 38 M390 260 l-8 38 M470 330 l-8 38 M540 240 l-8 38 M610 340 l-8 38 M730 300 l-8 38 M20 360 l-8 38 M100 440 l-8 38 M200 480 l-8 38 M270 420 l-8 38 M440 450 l-8 38 M520 470 l-8 38 M660 440 l-8 38 M750 470 l-8 38 M30 520 l-8 38 M160 560 l-8 38 M600 540 l-8 38 M720 540 l-8 38"/>
+</g>
+<g stroke="#f2f8ff" stroke-width="1" opacity="0.65" stroke-linecap="round">
+<path d="M80 40 l-5 24 M240 70 l-5 24 M370 10 l-5 24 M500 60 l-5 24 M650 20 l-5 24 M760 110 l-5 24 M130 160 l-5 24 M310 200 l-5 24 M580 180 l-5 24 M700 220 l-5 24 M60 300 l-5 24 M420 380 l-5 24 M240 470 l-5 24 M560 400 l-5 24"/>
+</g>
+</svg>
