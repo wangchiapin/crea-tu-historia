@@ -157,7 +157,8 @@ const T = {
   setRange: ['抽選範圍', '抽选范围'], pool: ['個語法點', '个语法点'], imgsN: ['張圖片', '张图片'],
   setLevel: ['程度（可多選）', '程度（可多选）'],
   setLevelNote: ['先選要抽哪幾冊，再到下面微調個別語法點。', '先选要抽哪几册，再到下面微调个别语法点。'],
-  setFine: ['微調語法點（勾選＝會被抽到）', '微调语法点（勾选＝会被抽到）'],
+  srcNote: ['語法點來源：《當代中文課程》第 1–6 冊（共 541 個語法點）。勾選＝會被抽到。', '语法点来源：《当代中文课程》第 1–6 册（共 541 个语法点）。勾选＝会被抽到。'],
+  setFine: ['語法點範圍（勾選＝會被抽到）', '语法点范围（勾选＝会被抽到）'],
   search: ['搜尋語法點…', '搜索语法点…'], allOn: ['全選', '全选'], allOff: ['全不選', '全不选'],
   setCustom: ['自訂語法點', '自订语法点'], cTitle: ['語法點名稱，例如：連……都……', '语法点名称，例如：连……都……'],
   cEx: ['例句（選填）', '例句（选填）'], add: ['新增', '新增'], del: ['刪除', '删除'],
@@ -276,9 +277,16 @@ async function ensureTeacherData() {
 /* ================= 語法點池 ================= */
 function levelOf(b) { return (G().books || {})[b] || ''; }
 function tagOf(p) { return t('book') + p.b + t('bookUnit') + '・' + levelOf(p.b) + '・' + t('book') + p.l + t('lesson'); }
+function migrateRange() {
+  if (S.rangeInit || !G()) return;
+  const keep = S.books && S.books.length ? S.books : [1];
+  S.excluded = Array.from(new Set(S.excluded.concat(G().points.filter((p) => !keep.includes(p.b)).map((p) => p.id))));
+  S.rangeInit = true; saveS();
+}
 function pool() {
+  migrateRange();
   const ex = new Set(S.excluded);
-  const P = G().points.filter((p) => S.books.includes(p.b) && !ex.has(p.id)).map((p) => ({ id: p.id, tc: p.t, sc: p.ts, tagB: p.b, tagL: p.l, ex: p.ex || [] }));
+  const P = G().points.filter((p) => !ex.has(p.id)).map((p) => ({ id: p.id, tc: p.t, sc: p.ts, tagB: p.b, tagL: p.l, ex: p.ex || [] }));
   S.customs.filter((c) => c.on).forEach((c) => P.push({ id: c.id, tc: c.tc, sc: c.sc, tagB: 0, tagL: 0, ex: c.ex ? [{ c: c.ex, s: c.exs || c.ex }] : [], custom: true }));
   return P;
 }
@@ -320,7 +328,7 @@ function imgCard(imgId) {
 }
 function gramCard(g, waitKey) {
   if (!g) return '<div class="card gram"><div class="lab">' + t('lblGram') + '</div><div class="body"><div class="empty">' + t(waitKey) + '</div></div></div>';
-  return '<div class="card gram"><div class="lab">' + t('lblGram') + '</div><div class="body"><div class="gtitle">' + esc(g.title) + '</div><div class="gtag">' + esc(g.tag) + '</div></div></div>';
+  return '<div class="card gram"><div class="lab">' + t('lblGram') + '</div><div class="body"><div class="gtitle">' + esc(g.title) + '</div></div></div>';
 }
 function fmtT(sec) { return String(Math.floor(sec / 60)).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0'); }
 function timerBox() {
@@ -384,11 +392,15 @@ function renderTeacher() {
   if (tab === 'sentence') body = teacherSentence();
   else if (tab === 'story') body = teacherStory();
   else body = teacherSettings();
+  const openBk = Array.from(document.querySelectorAll('details.bk')).map((d) => d.open);
+  const q0 = ($('#plSearch') || {}).value || '';
   app.innerHTML =
     '<div class="top"><span class="brand">' + t('title') + '</span>' + langBtn() + '<button class="chip" data-a="home">' + t('back') + '</button></div>' +
     roomBar() + '<div class="tabs">' + tabs + '</div>' + body;
   if (tab === 'story') { const ta = $('#storyIn'); if (ta) ta.value = storyDraft; }
-  if (tab === 'set') applyPlistFilter();
+  document.querySelectorAll('details.bk').forEach((d, i) => { d.open = !!openBk[i]; });
+  if ($('#plSearch')) $('#plSearch').value = q0;
+  if (tab === 'sentence') applyPlistFilter();
   startLocalClock();
 }
 
@@ -397,13 +409,27 @@ function teacherSentence() {
   const img = cur.mode === 'sentence' ? cur.img : null;
   return '<div class="drawrow"><button class="draw" data-a="draw"' + (rolling ? ' disabled' : '') + '>' + (rolling ? t('drawing') : t('draw')) + '</button>' +
     '<button class="btn" data-a="drawimg"' + (rolling ? ' disabled' : '') + '>' + t('drawImg') + '</button>' +
-    '<span class="note">' + poolInfo() + '</span></div>' +
+    '</div>' +
+    timerPanel() +
     '<div class="cards' + (rolling ? ' rolling' : '') + '" id="cards">' + (img ? imgCard(img) : '<div class="card img"><div class="lab">' + t('lblImg') + '</div><div class="empty">' + t('waitT') + '</div></div>') + gramCard(g, img ? 'noG' : 'waitT') + '</div>' +
     (cur.mode === 'sentence' && cur.img ? '<p class="note" style="text-align:center;margin:10px 0 0">' + t(cur.g ? 'askSentence' : 'askImg') + '</p>' : '') +
-    (cur.mode === 'sentence' ? timerPanel() : '') +
-    (cur.mode === 'sentence' ? hintsHtml() : '');
+    (cur.mode === 'sentence' ? hintsHtml() : '') + grammarList();
 }
-function poolInfo() { return t('setRange') + '：' + pool().length + t('pool') + ' × ' + enabledImgs().length + t('imgsN'); }
+function grammarList() {
+  pool();
+  const ex = new Set(S.excluded);
+  const byBook = {};
+  G().points.forEach((p) => { (byBook[p.b] = byBook[p.b] || []).push(p); });
+  const fine = Object.keys(byBook).map((b) => {
+    const list = byBook[b];
+    const on = list.filter((p) => !ex.has(p.id)).length;
+    return '<details class="bk"><summary>' + t('book') + b + t('bookUnit') + ' ' + G().books[b] + '　<span class="note">' + on + '/' + list.length + '</span>' +
+      '<span style="margin-left:auto"></span><button class="btn small" data-a="bookall" data-v="' + b + '">' + t('allOn') + '</button><button class="btn small" data-a="booknone" data-v="' + b + '">' + t('allOff') + '</button></summary>' +
+      '<div class="plist">' + list.map((p) => '<label data-q="' + esc((p.t + ' ' + p.ts + ' ' + p.id).toLowerCase()) + '"><input type="checkbox" data-a="pt" data-v="' + p.id + '"' + (ex.has(p.id) ? '' : ' checked') + '><span class="id">' + p.id + '</span><span>' + esc(SC() ? p.ts : p.t) + '</span></label>').join('') + '</div></details>';
+  }).join('');
+  return '<div class="sec"><h2>' + t('setFine') + '</h2><div class="row" style="margin-bottom:6px"><input type="text" id="plSearch" placeholder="' + esc(t('search')) + '" style="flex:1"></div>' + fine + '</div>' +
+    '<p class="note" style="text-align:center;margin:14px 0 4px">' + t('srcNote') + '</p>';
+}
 
 function teacherStory() {
   const isStory = cur.mode === 'story';
@@ -416,23 +442,9 @@ function teacherStory() {
 }
 
 function teacherSettings() {
-  const bookChips = Object.keys(G().books).map((b) => '<button class="chip' + (S.books.includes(+b) ? ' on' : '') + '" data-a="book" data-v="' + b + '">' + t('book') + b + t('bookUnit') + ' ' + G().books[b] + '</button>').join('');
-  const byBook = {};
-  G().points.forEach((p) => { if (S.books.includes(p.b)) (byBook[p.b] = byBook[p.b] || []).push(p); });
-  const ex = new Set(S.excluded);
-  const fine = Object.keys(byBook).map((b) => {
-    const list = byBook[b];
-    const on = list.filter((p) => !ex.has(p.id)).length;
-    return '<details class="bk"><summary>' + t('book') + b + t('bookUnit') + ' ' + G().books[b] + '　<span class="note">' + on + '/' + list.length + '</span>' +
-      '<span style="margin-left:auto"></span><button class="btn small" data-a="bookall" data-v="' + b + '">' + t('allOn') + '</button><button class="btn small" data-a="booknone" data-v="' + b + '">' + t('allOff') + '</button></summary>' +
-      '<div class="plist">' + list.map((p) => '<label data-q="' + esc((p.t + ' ' + p.ts + ' ' + p.id).toLowerCase()) + '"><input type="checkbox" data-a="pt" data-v="' + p.id + '"' + (ex.has(p.id) ? '' : ' checked') + '><span class="id">' + p.id + '</span><span>' + esc(SC() ? p.ts : p.t) + '</span></label>').join('') + '</div></details>';
-  }).join('');
   const customs = S.customs.map((c) => '<div class="cust"><input type="checkbox" data-a="custon" data-v="' + c.id + '"' + (c.on ? ' checked' : '') + '><span class="t">' + esc(SC() ? c.sc : c.tc) + (c.ex ? '<br><span class="note">' + esc(SC() ? (c.exs || c.ex) : c.ex) + '</span>' : '') + '</span><button class="btn small danger" data-a="custdel" data-v="' + c.id + '">' + t('del') + '</button></div>').join('');
   const imgs = IMGS().map((i) => '<label><img src="' + esc(i.src) + '" alt=""><span><input type="checkbox" data-a="img" data-v="' + i.id + '"' + (S.imgsOff.includes(i.id) ? '' : ' checked') + '>' + esc(SC() ? i.name.sc : i.name.tc) + '</span></label>').join('');
-  return '<div class="sec"><h2>' + t('setRange') + '：' + pool().length + t('pool') + ' × ' + enabledImgs().length + t('imgsN') + '</h2></div>' +
-    '<div class="sec"><h2>' + t('setLevel') + '</h2><div class="row">' + bookChips + '</div><p class="note" style="margin:8px 0 0">' + t('setLevelNote') + '</p></div>' +
-    '<div class="sec"><h2>' + t('setFine') + '</h2><div class="row" style="margin-bottom:6px"><input type="text" id="plSearch" placeholder="' + esc(t('search')) + '" style="flex:1"></div>' + (fine || '<p class="note">—</p>') + '</div>' +
-    '<div class="sec"><h2>' + t('setCustom') + '</h2><div class="row"><input type="text" id="cTitle" placeholder="' + esc(t('cTitle')) + '" style="flex:1;min-width:200px"><input type="text" id="cEx" placeholder="' + esc(t('cEx')) + '" style="flex:1;min-width:200px"><button class="btn primary" data-a="custadd">' + t('add') + '</button></div>' + customs + '</div>' +
+  return     '<div class="sec"><h2>' + t('setCustom') + '</h2><div class="row"><input type="text" id="cTitle" placeholder="' + esc(t('cTitle')) + '" style="flex:1;min-width:200px"><input type="text" id="cEx" placeholder="' + esc(t('cEx')) + '" style="flex:1;min-width:200px"><button class="btn primary" data-a="custadd">' + t('add') + '</button></div>' + customs + '</div>' +
     '<div class="sec"><h2>' + t('setImgs') + '</h2><div class="imgs">' + imgs + '</div></div>' +
     '<div class="sec"><h2>' + t('setOther') + '</h2><label class="row"><input type="checkbox" data-a="norepeat"' + (S.noRepeat ? ' checked' : '') + '> ' + t('noRepeat') + '</label></div>';
 }
@@ -451,12 +463,12 @@ function renderStudent() {
   if (!d || (!d.img && !d.story)) {
     body = '<div class="cards">' + '<div class="card img"><div class="lab">' + t('lblImg') + '</div><div class="empty">' + t('waitS') + '</div></div>' + gramCard(null, 'waitS') + '</div>';
   } else if (d.mode === 'story') {
-    body = '<div class="cards">' + imgCard(d.img) + '<div class="story"><div class="lab">' + t('storyLab') + '</div><div class="s">' + esc(d.story ? (SC() ? d.story.sc : d.story.tc) : '—') + '</div><div class="ask">' + t('askStory') + '</div></div></div>' + timerBox();
+    body = '<div class="cards">' + imgCard(d.img) + '<div class="story"><div class="lab">' + t('storyLab') + '</div><div class="s">' + esc(d.story ? (SC() ? d.story.sc : d.story.tc) : '—') + '</div><div class="ask">' + t('askStory') + '</div></div></div>';
   } else {
     const g = d.g ? { title: SC() ? d.g.sc : d.g.tc, tag: d.g.custom ? t('custom') : (d.g.b ? t('book') + d.g.b + t('bookUnit') + '・' + (d.g.lv || '') + '・' + t('book') + d.g.l + t('lesson') : '') } : null;
-    body = '<div class="cards">' + imgCard(d.img) + gramCard(g, d.img ? 'noG' : 'waitS') + '</div><p class="note" style="text-align:center;margin-top:12px;font-size:15px">' + t(d.g ? 'askSentence' : 'askImg') + '</p>' + timerBox();
+    body = '<div class="cards">' + imgCard(d.img) + gramCard(g, d.img ? 'noG' : 'waitS') + '</div><p class="note" style="text-align:center;margin-top:12px;font-size:15px">' + t(d.g ? 'askSentence' : 'askImg') + '</p>';
   }
-  app.innerHTML = top + body;
+  app.innerHTML = top + (d && (d.img || d.story) ? timerBox() : '') + body;
   startLocalClock();
 }
 
@@ -660,7 +672,6 @@ document.addEventListener('change', (e) => {
   else if (a === 'tmauto') { S.autoTimer = el.checked; saveS(); }
 });
 function updateRange() {
-  const h = document.querySelector('.sec h2'); if (h) h.textContent = t('setRange') + '：' + pool().length + t('pool') + ' × ' + enabledImgs().length + t('imgsN');
   document.querySelectorAll('details.bk').forEach((d) => { const boxes = d.querySelectorAll('.plist input'); const on = Array.from(boxes).filter((b) => b.checked).length; const n = d.querySelector('summary .note'); if (n) n.textContent = on + '/' + boxes.length; });
 }
 document.addEventListener('input', (e) => {
