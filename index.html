@@ -77,8 +77,10 @@ button{font:inherit;color:inherit;cursor:pointer}
 details.bk{border:1px solid var(--line);border-radius:6px;margin-top:8px;background:#fbf8f0}
 details.bk>summary{padding:8px 10px;cursor:pointer;font-weight:600;display:flex;gap:8px;align-items:center}
 .plist{padding:4px 10px 10px;display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:2px 12px;max-height:380px;overflow:auto}
-.plist label{display:flex;gap:6px;align-items:flex-start;padding:3px 0;font-size:14px;line-height:1.35;cursor:pointer}
+.plist .pi{display:flex;gap:6px;align-items:flex-start;padding:3px 0;font-size:14px;line-height:1.35;cursor:pointer}
 .plist input{margin-top:3px}
+.plist .pf{cursor:pointer;border-bottom:1px dotted var(--mute)}
+.plist .pf:hover{background:#efe6cf}
 .plist .id{color:var(--mute);font-size:11px;min-width:34px}
 .imgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
 .imgs label{border:1.5px solid var(--line);border-radius:6px;overflow:hidden;background:#fbf8f0;cursor:pointer;font-size:13px}
@@ -157,8 +159,9 @@ const T = {
   setRange: ['抽選範圍', '抽选范围'], pool: ['個語法點', '个语法点'], imgsN: ['張圖片', '张图片'],
   setLevel: ['程度（可多選）', '程度（可多选）'],
   setLevelNote: ['先選要抽哪幾冊，再到下面微調個別語法點。', '先选要抽哪几册，再到下面微调个别语法点。'],
+  forceTip: ['點這裡：用這個語法點抽（圖片隨機）', '点这里：用这个语法点抽（图片随机）'],
   srcNote: ['語法點來源：《當代中文課程》第 1–6 冊（共 541 個語法點）。勾選＝會被抽到。', '语法点来源：《当代中文课程》第 1–6 册（共 541 个语法点）。勾选＝会被抽到。'],
-  setFine: ['語法點範圍（勾選＝會被抽到）', '语法点范围（勾选＝会被抽到）'],
+  setFine: ['語法點範圍（勾選＝會被抽到；點語法點文字＝直接用它抽）', '语法点范围（勾选＝会被抽到；点语法点文字＝直接用它抽）'],
   search: ['搜尋語法點…', '搜索语法点…'], allOn: ['全選', '全选'], allOff: ['全不選', '全不选'],
   setCustom: ['自訂語法點', '自订语法点'], cTitle: ['語法點名稱，例如：連……都……', '语法点名称，例如：连……都……'],
   cEx: ['例句（選填）', '例句（选填）'], add: ['新增', '新增'], del: ['刪除', '删除'],
@@ -425,7 +428,7 @@ function grammarList() {
     const on = list.filter((p) => !ex.has(p.id)).length;
     return '<details class="bk"><summary>' + t('book') + b + t('bookUnit') + ' ' + G().books[b] + '　<span class="note">' + on + '/' + list.length + '</span>' +
       '<span style="margin-left:auto"></span><button class="btn small" data-a="bookall" data-v="' + b + '">' + t('allOn') + '</button><button class="btn small" data-a="booknone" data-v="' + b + '">' + t('allOff') + '</button></summary>' +
-      '<div class="plist">' + list.map((p) => '<label data-q="' + esc((p.t + ' ' + p.ts + ' ' + p.id).toLowerCase()) + '"><input type="checkbox" data-a="pt" data-v="' + p.id + '"' + (ex.has(p.id) ? '' : ' checked') + '><span class="id">' + p.id + '</span><span>' + esc(SC() ? p.ts : p.t) + '</span></label>').join('') + '</div></details>';
+      '<div class="plist">' + list.map((p) => '<div class="pi" data-q="' + esc((p.t + ' ' + p.ts + ' ' + p.id).toLowerCase()) + '"><input type="checkbox" data-a="pt" data-v="' + p.id + '"' + (ex.has(p.id) ? '' : ' checked') + '><span class="id">' + p.id + '</span><span class="pf" data-a="force" data-v="' + p.id + '" title="' + esc(t('forceTip')) + '">' + esc(SC() ? p.ts : p.t) + '</span></div>').join('') + '</div></details>';
   }).join('');
   return '<div class="sec"><h2>' + t('setFine') + '</h2><div class="row" style="margin-bottom:6px"><input type="text" id="plSearch" placeholder="' + esc(t('search')) + '" style="flex:1"></div>' + fine + '</div>' +
     '<p class="note" style="text-align:center;margin:14px 0 4px">' + t('srcNote') + '</p>';
@@ -450,7 +453,7 @@ function teacherSettings() {
 }
 function applyPlistFilter() {
   const q = (($('#plSearch') || {}).value || '').trim().toLowerCase();
-  document.querySelectorAll('.plist label').forEach((l) => { l.style.display = !q || l.dataset.q.includes(q) ? '' : 'none'; });
+  document.querySelectorAll('.plist .pi').forEach((l) => { l.style.display = !q || l.dataset.q.includes(q) ? '' : 'none'; });
   if (q) document.querySelectorAll('details.bk').forEach((d) => { d.open = true; });
 }
 
@@ -512,8 +515,12 @@ async function push() {
 }
 const pick = (a) => a[Math.floor(Math.random() * a.length)];
 
-function chooseNext(imgOnly) {
+function chooseNext(imgOnly, forceId) {
   const P = pool(), I = enabledImgs();
+  if (forceId) {
+    const p = G().points.find((x) => x.id === forceId);
+    if (p && I.length) return { g: { id: p.id, tc: p.t, sc: p.ts, tagB: p.b, tagL: p.l, ex: p.ex || [] }, im: pick(I.length > 1 ? I.filter((i) => i.id !== lastImg) : I) };
+  }
   if (!I.length || (!imgOnly && !P.length)) return null;
   if (imgOnly) { const ic0 = I.length > 1 ? I.filter((i) => i.id !== lastImg) : I; return { g: null, im: pick(ic0) }; }
   let cand = S.noRepeat ? P.filter((p) => !usedG.has(p.id)) : P;
@@ -524,9 +531,9 @@ function chooseNext(imgOnly) {
   return { g, im };
 }
 
-function drawSentence(imgOnly) {
+function drawSentence(imgOnly, forceId) {
   if (rolling) return;
-  const nxt = chooseNext(imgOnly);
+  const nxt = chooseNext(imgOnly, forceId);
   if (!nxt) { toast(t('poolEmpty')); return; }
   rolling = true; tab = 'sentence'; cur.mode = 'sentence'; cur.story = null; cur.tm = null; tmSet(null);
   render();
@@ -644,6 +651,7 @@ document.addEventListener('click', async (e) => {
     case 'endroom': endRoom(); break;
     case 'copylink': try { await navigator.clipboard.writeText(el.dataset.url); toast(t('copied')); } catch (er) { prompt('', el.dataset.url); } break;
     case 'book': { const b = +v; S.books = S.books.includes(b) ? S.books.filter((x) => x !== b) : S.books.concat(b).sort(); saveS(); render(); break; }
+    case 'force': drawSentence(false, v); window.scrollTo({ top: 0, behavior: 'smooth' }); break;
     case 'bookall': { const ids = G().points.filter((p) => p.b === +v).map((p) => p.id); S.excluded = S.excluded.filter((x) => !ids.includes(x)); saveS(); keepOpenRender(); break; }
     case 'booknone': { const ids = G().points.filter((p) => p.b === +v).map((p) => p.id); S.excluded = Array.from(new Set(S.excluded.concat(ids))); saveS(); keepOpenRender(); break; }
     case 'custadd': {
