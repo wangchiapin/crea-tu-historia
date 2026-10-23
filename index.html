@@ -166,7 +166,7 @@ const T = {
   setLevel: ['程度（可多選）', '程度（可多选）'],
   setLevelNote: ['先選要抽哪幾冊，再到下面微調個別語法點。', '先选要抽哪几册，再到下面微调个别语法点。'],
   forceTip: ['點這裡：用這個語法點抽（圖片隨機）', '点这里：用这个语法点抽（图片随机）'],
-  srcNote: ['語法點來源：《當代中文課程》第 1–6 冊（共 541 個語法點）。勾選＝會被抽到。', '语法点来源：《当代中文课程》第 1–6 册（共 541 个语法点）。勾选＝会被抽到。'],
+  srcNote: ['語法點來源：《當代中文課程》第 {r} 冊（共 {n} 個語法點）。勾選＝會被抽到。', '语法点来源：《当代中文课程》第 {r} 册（共 {n} 个语法点）。勾选＝会被抽到。'],
   setFine: ['語法點範圍（勾選＝會被抽到；點語法點文字＝直接用它抽）', '语法点范围（勾选＝会被抽到；点语法点文字＝直接用它抽）'],
   search: ['搜尋語法點…', '搜索语法点…'], allOn: ['全選', '全选'], allOff: ['全不選', '全不选'],
   setCustom: ['自訂語法點', '自订语法点'], cTitle: ['語法點名稱，例如：連……都……', '语法点名称，例如：连……都……'],
@@ -286,6 +286,10 @@ async function ensureTeacherData() {
 /* ================= 語法點池 ================= */
 function levelOf(b) { return (G().books || {})[b] || ''; }
 function tagOf(p) { return t('book') + p.b + t('bookUnit') + '・' + levelOf(p.b) + '・' + t('book') + p.l + t('lesson'); }
+/* 暫時隱藏的冊數（之後要開放，改成 [] 即可） */
+const HIDE_BOOKS = [5, 6];
+const SHOWN = () => G().points.filter((p) => !HIDE_BOOKS.includes(p.b));
+function shownRange() { const b = Object.keys(G().books).map(Number).filter((x) => !HIDE_BOOKS.includes(x)); return b.length ? (b.length > 1 ? b[0] + '–' + b[b.length - 1] : String(b[0])) : '—'; }
 function migrateRange() {
   if (S.rangeInit || !G()) return;
   const keep = S.books && S.books.length ? S.books : [1];
@@ -295,7 +299,7 @@ function migrateRange() {
 function pool() {
   migrateRange();
   const ex = new Set(S.excluded);
-  const P = G().points.filter((p) => !ex.has(p.id)).map((p) => ({ id: p.id, tc: p.t, sc: p.ts, tagB: p.b, tagL: p.l, ex: p.ex || [] }));
+  const P = SHOWN().filter((p) => !ex.has(p.id)).map((p) => ({ id: p.id, tc: p.t, sc: p.ts, tagB: p.b, tagL: p.l, ex: p.ex || [] }));
   S.customs.filter((c) => c.on).forEach((c) => P.push({ id: c.id, tc: c.tc, sc: c.sc, tagB: 0, tagL: 0, ex: c.ex ? [{ c: c.ex, s: c.exs || c.ex }] : [], custom: true }));
   return P;
 }
@@ -456,7 +460,7 @@ function grammarList() {
   pool();
   const ex = new Set(S.excluded);
   const byBook = {};
-  G().points.forEach((p) => { (byBook[p.b] = byBook[p.b] || []).push(p); });
+  SHOWN().forEach((p) => { (byBook[p.b] = byBook[p.b] || []).push(p); });
   const fine = Object.keys(byBook).map((b) => {
     const list = byBook[b];
     const on = list.filter((p) => !ex.has(p.id)).length;
@@ -465,7 +469,7 @@ function grammarList() {
       '<div class="plist">' + list.map((p) => '<div class="pi" data-q="' + esc((p.t + ' ' + p.ts + ' ' + p.id).toLowerCase()) + '"><input type="checkbox" data-a="pt" data-v="' + p.id + '"' + (ex.has(p.id) ? '' : ' checked') + '><span class="id">' + p.id + '</span><span class="pf" data-a="force" data-v="' + p.id + '" title="' + esc(t('forceTip')) + '">' + esc(SC() ? p.ts : p.t) + '</span></div>').join('') + '</div></details>';
   }).join('');
   return '<div class="sec"><h2>' + t('setFine') + '</h2><div class="row" style="margin-bottom:6px"><input type="text" id="plSearch" placeholder="' + esc(t('search')) + '" style="flex:1"></div>' + fine + '</div>' +
-    '<p class="note" style="text-align:center;margin:14px 0 4px">' + t('srcNote') + '</p>';
+    '<p class="note" style="text-align:center;margin:14px 0 4px">' + t('srcNote').replace('{r}', shownRange()).replace('{n}', SHOWN().length) + '</p>';
 }
 
 function teacherStory() {
