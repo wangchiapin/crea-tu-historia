@@ -52,6 +52,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 .gtag{font-size:13px;color:var(--mute)}
 .empty{color:var(--mute);font-size:18px;padding:40px 16px;text-align:center;line-height:1.8}
 .card>.empty{flex:1;display:flex;align-items:center;justify-content:center;min-height:200px}
+.stu{padding:10px 12px}.stu .row{gap:8px;align-items:center}.stu input{width:150px}
+.errrow{display:flex;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}.errrow .tt{flex:1;font-weight:600}.errrow .n{color:var(--mute)}
 .drawrow{display:flex;gap:10px;align-items:center;margin:14px 0;flex-wrap:wrap}
 .draw{background:var(--ink);color:var(--panel);border:2px solid var(--ink);border-radius:8px;font-size:22px;letter-spacing:.3em;padding:14px 40px;font-weight:700}
 .draw:active{transform:translateY(1px)}
@@ -128,7 +130,10 @@ const T = {
   badRoom: ['找不到這個房間，請問老師房號', '找不到这个房间，请问老师房号'],
   expired: ['這個房間已經結束了', '这个房间已经结束了'],
   connFail: ['連線失敗，請檢查網路後再試', '连线失败，请检查网络后再试'],
-  tabS: ['造句抽選', '造句抽选'], tabStory: ['編故事', '编故事'], tabSet: ['設定', '设置'],
+  tabS: ['造句抽選', '造句抽选'], tabStory: ['編故事', '编故事'], tabSet: ['設定', '设置'], tabErr: ['常錯語法', '常错语法'],
+  stuLab: ['學生', '学生'], stuPh: ['輸入學生姓名', '输入学生姓名'], stuAdd: ['加入', '加入'], stuNone: ['（先加入學生姓名，才能記錄用錯的語法）', '（先加入学生姓名，才能记录用错的语法）'],
+  errMark: ['✗ 用錯了，記到常錯語法', '✗ 用错了，记到常错语法'], errDone: ['✓ 已記到', '✓ 已记到'], errUndo: ['（再按一次取消）', '（再按一次取消）'], pickStu: ['請先點選上方的學生姓名', '请先点选上方的学生姓名'],
+  errEmpty: ['還沒有紀錄。抽選時按「用錯了」就會記在這裡。', '还没有记录。抽选时按「用错了」就会记在这里。'], errAgain: ['再抽它', '再抽它'], delStu: ['刪除學生', '删除学生'], errNote: ['紀錄只存在這台裝置的瀏覽器裡。', '记录只存在这台设备的浏览器里。'], errCnt: ['次', '次'],
   drawImg: ['只抽圖片', '只抽图片'], noG: ['這次不抽語法點', '这次不抽语法点'], askImg: ['請看這張圖片，說一個句子', '请看这张图片，说一个句子'],
   draw: ['抽選', '抽选'], drawing: ['抽選中…', '抽选中…'],
   lblImg: ['圖片卡', '图片卡'], lblGram: ['語法點', '语法点'],
@@ -177,7 +182,7 @@ const SC = () => (S.lang === 'sc' ? 1 : 0);
 const t = (k) => (T[k] ? T[k][SC()] : k);
 
 /* ================= 設定（存在這台裝置） ================= */
-const DEF = { lang: 'tc', books: [1], excluded: [], customs: [], imgsOff: [], showHints: true, storyTimer: 120, timerSel: 'd120', autoTimer: false, noRepeat: true };
+const DEF = { lang: 'tc', books: [1], excluded: [], customs: [], imgsOff: [], showHints: true, storyTimer: 120, timerSel: 'd120', autoTimer: false, noRepeat: true, stus: [], stu: null, errs: {} };
 function loadS() { try { return Object.assign({}, DEF, JSON.parse(localStorage.getItem(LS_KEY) || '{}')); } catch (e) { return Object.assign({}, DEF); } }
 let S = loadS();
 function saveS() { try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) {} }
@@ -390,11 +395,12 @@ function hintsHtml() {
 
 function renderTeacher() {
   if (!teacherDataReady) { app.innerHTML = '<div class="empty">…</div>'; ensureTeacherData().then(render).catch(() => { app.innerHTML = '<div class="empty">' + t('connFail') + '</div>'; }); return; }
-  const tabs = [['sentence', 'tabS'], ['story', 'tabStory'], ['set', 'tabSet']]
+  const tabs = [['sentence', 'tabS'], ['story', 'tabStory'], ['err', 'tabErr'], ['set', 'tabSet']]
     .map(([k, l]) => '<button class="chip' + (tab === k ? ' on' : '') + '" data-a="tab" data-v="' + k + '">' + t(l) + '</button>').join('');
   let body = '';
   if (tab === 'sentence') body = teacherSentence();
   else if (tab === 'story') body = teacherStory();
+  else if (tab === 'err') body = teacherErrs();
   else body = teacherSettings();
   const openBk = Array.from(document.querySelectorAll('details.bk')).map((d) => d.open);
   const q0 = ($('#plSearch') || {}).value || '';
@@ -413,11 +419,38 @@ function teacherSentence() {
   const img = cur.mode === 'sentence' ? cur.img : null;
   return '<div class="drawrow"><button class="draw" data-a="draw"' + (rolling ? ' disabled' : '') + '>' + (rolling ? t('drawing') : t('draw')) + '</button>' +
     '<button class="btn" data-a="drawimg"' + (rolling ? ' disabled' : '') + '>' + t('drawImg') + '</button>' +
-    '</div>' +
+    '</div>' + stuRow() +
     timerPanel() +
     '<div class="cards' + (rolling ? ' rolling' : '') + '" id="cards">' + (img ? imgCard(img) : '<div class="card img"><div class="lab">' + t('lblImg') + '</div><div class="empty">' + t('waitT') + '</div></div>') + gramCard(g, img ? 'noG' : 'waitT') + '</div>' +
     (cur.mode === 'sentence' && cur.img ? '<p class="note" style="text-align:center;margin:10px 0 0">' + t(cur.g ? 'askSentence' : 'askImg') + '</p>' : '') +
+    (cur.mode === 'sentence' && cur.g && !rolling ? errBtn() : '') +
     (cur.mode === 'sentence' ? hintsHtml() : '') + grammarList();
+}
+function stuRow() {
+  const chips = S.stus.map((x) => '<button class="chip' + (S.stu === x.id ? ' on' : '') + '" data-a="stu" data-v="' + x.id + '">' + esc(x.n) + '</button>').join('');
+  return '<div class="sec stu"><div class="row"><span class="note">' + t('stuLab') + '</span>' + chips +
+    '<input type="text" id="stuIn" placeholder="' + esc(t('stuPh')) + '"><button class="btn small" data-a="stuadd">' + t('stuAdd') + '</button></div>' +
+    (S.stus.length ? '' : '<p class="note" style="margin:6px 0 0">' + t('stuNone') + '</p>') + '</div>';
+}
+function stuName(id) { const x = S.stus.find((y) => y.id === id); return x ? x.n : ''; }
+let marked = null;
+function errBtn() {
+  const on = marked === cur.seq + ':' + S.stu && S.stu;
+  return '<div style="text-align:center;margin:10px 0 0"><button class="btn' + (on ? ' primary' : '') + '" data-a="errmark">' + (on ? t('errDone') + ' ' + esc(stuName(S.stu)) + ' ' + t('errUndo') : t('errMark') + (S.stu ? '（' + esc(stuName(S.stu)) + '）' : '')) + '</button></div>';
+}
+function errAdd(stu, g, d) {
+  const e = (S.errs[stu] = S.errs[stu] || {});
+  const r = (e[g.id] = e[g.id] || { n: 0, tc: g.tc, sc: g.sc });
+  r.n += d; if (r.n <= 0) delete e[g.id];
+  saveS();
+}
+function teacherErrs() {
+  const blocks = S.stus.map((x) => {
+    const rows = Object.keys(S.errs[x.id] || {}).map((gid) => Object.assign({ gid }, S.errs[x.id][gid])).sort((a, b) => b.n - a.n);
+    return '<div class="sec"><h2 style="display:flex;align-items:center;gap:8px">' + esc(x.n) + '<span class="note">' + rows.length + '</span><span style="margin-left:auto"></span><button class="btn small danger" data-a="studel" data-v="' + x.id + '">' + t('delStu') + '</button></h2>' +
+      (rows.length ? rows.map((r) => '<div class="errrow"><span class="tt">' + esc(SC() ? r.sc : r.tc) + '</span><span class="n">' + r.n + ' ' + t('errCnt') + '</span><button class="btn small" data-a="errdraw" data-v="' + x.id + '|' + r.gid + '">' + t('errAgain') + '</button><button class="btn small" data-a="errdec" data-v="' + x.id + '|' + r.gid + '">−</button></div>').join('') : '<p class="note" style="margin:6px 0 0">' + t('errEmpty') + '</p>') + '</div>';
+  }).join('');
+  return (blocks || '<div class="sec"><p class="note" style="margin:0">' + t('stuNone') + '</p></div>') + '<p class="note" style="text-align:center;margin:14px 0 4px">' + t('errNote') + '</p>';
 }
 function grammarList() {
   pool();
@@ -519,7 +552,9 @@ const pick = (a) => a[Math.floor(Math.random() * a.length)];
 function chooseNext(imgOnly, forceId) {
   const P = pool(), I = enabledImgs();
   if (forceId) {
-    const p = G().points.find((x) => x.id === forceId);
+    let p = G().points.find((x) => x.id === forceId);
+    const cu = !p && S.customs.find((x) => x.id === forceId);
+    if (cu && I.length) return { g: { id: cu.id, tc: cu.tc, sc: cu.sc, tagB: 0, tagL: 0, ex: cu.ex ? [{ c: cu.ex, s: cu.exs || cu.ex }] : [], custom: true }, im: pick(I.length > 1 ? I.filter((i) => i.id !== lastImg) : I) };
     if (p && I.length) return { g: { id: p.id, tc: p.t, sc: p.ts, tagB: p.b, tagL: p.l, ex: p.ex || [] }, im: pick(I.length > 1 ? I.filter((i) => i.id !== lastImg) : I) };
   }
   if (!I.length || (!imgOnly && !P.length)) return null;
@@ -652,6 +687,17 @@ document.addEventListener('click', async (e) => {
     case 'endroom': endRoom(); break;
     case 'copylink': try { await navigator.clipboard.writeText(el.dataset.url); toast(t('copied')); } catch (er) { prompt('', el.dataset.url); } break;
     case 'book': { const b = +v; S.books = S.books.includes(b) ? S.books.filter((x) => x !== b) : S.books.concat(b).sort(); saveS(); render(); break; }
+    case 'stu': S.stu = S.stu === v ? null : v; saveS(); render(); break;
+    case 'stuadd': addStu(); break;
+    case 'studel': if (confirm(t('delStu') + '：' + stuName(v) + '？')) { S.stus = S.stus.filter((x) => x.id !== v); delete S.errs[v]; if (S.stu === v) S.stu = null; saveS(); render(); } break;
+    case 'errmark': {
+      if (!S.stu) { toast(t('pickStu')); break; }
+      const key = cur.seq + ':' + S.stu;
+      if (marked === key) { errAdd(S.stu, cur.g, -1); marked = null; } else { errAdd(S.stu, cur.g, 1); marked = key; }
+      render(); break;
+    }
+    case 'errdec': { const [sid, gid] = v.split('|'); const r = (S.errs[sid] || {})[gid]; if (r) errAdd(sid, { id: gid, tc: r.tc, sc: r.sc }, -1); render(); break; }
+    case 'errdraw': { const [sid, gid] = v.split('|'); S.stu = sid; saveS(); tab = 'sentence'; drawSentence(false, gid); window.scrollTo({ top: 0 }); break; }
     case 'force': drawSentence(false, v); window.scrollTo({ top: 0, behavior: 'smooth' }); break;
     case 'bookall': { const ids = G().points.filter((p) => p.b === +v).map((p) => p.id); S.excluded = S.excluded.filter((x) => !ids.includes(x)); saveS(); keepOpenRender(); break; }
     case 'booknone': { const ids = G().points.filter((p) => p.b === +v).map((p) => p.id); S.excluded = Array.from(new Set(S.excluded.concat(ids))); saveS(); keepOpenRender(); break; }
@@ -664,6 +710,12 @@ document.addEventListener('click', async (e) => {
     case 'custdel': S.customs = S.customs.filter((c) => c.id !== v); saveS(); render(); break;
   }
 });
+function addStu() {
+  const el = $('#stuIn'); const n = ((el && el.value) || '').trim(); if (!n) return;
+  if (S.stus.some((x) => x.n === n)) { S.stu = S.stus.find((x) => x.n === n).id; }
+  else { const id = 's' + Date.now(); S.stus.push({ id, n }); S.stu = id; }
+  saveS(); render();
+}
 function keepOpenRender() {
   const open = Array.from(document.querySelectorAll('details.bk')).map((d) => d.open);
   const q = ($('#plSearch') || {}).value || '';
@@ -688,6 +740,7 @@ document.addEventListener('input', (e) => {
   if (e.target.id === 'storyIn') storyDraft = e.target.value;
 });
 document.addEventListener('keydown', (e) => {
+  if (e.target.id === 'stuIn' && e.key === 'Enter') { addStu(); return; }
   if (e.target.id === 'joinIn' && e.key === 'Enter') { const c = e.target.value.trim(); if (/^\d{4}$/.test(c)) joinRoom(c); else $('#joinErr').textContent = t('badRoom'); return; }
   if (role === 'teacher' && tab === 'sentence' && (e.key === ' ' || e.key === 'Enter') && !/INPUT|TEXTAREA|SELECT|BUTTON|SUMMARY/.test(e.target.tagName)) { e.preventDefault(); drawSentence(); }
 });
