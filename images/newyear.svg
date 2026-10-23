@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+<defs>
+<filter id="b2" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="2"/></filter>
+<filter id="b4" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="4"/></filter>
+<filter id="b8" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="8"/></filter>
+<filter id="b16" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="16"/></filter>
+<filter id="b30" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="30"/></filter>
+<filter id="grain" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="3"/><feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.5 0"/></filter>
+<radialGradient id="vig" cx="0.5" cy="0.5" r="0.75"><stop offset="0.55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.28"/></radialGradient>
+<linearGradient id="wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a8221f"/><stop offset="1" stop-color="#7d1618"/></linearGradient>
+<linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f8e08a"/><stop offset="0.5" stop-color="#e0b13a"/><stop offset="1" stop-color="#b88a1a"/></linearGradient>
+<linearGradient id="floor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#7a5232"/><stop offset="1" stop-color="#4e321e"/></linearGradient>
+<linearGradient id="rc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e8352e"/><stop offset="1" stop-color="#b8201c"/></linearGradient>
+<radialGradient id="lan" cx="0.4" cy="0.35" r="0.8"><stop offset="0" stop-color="#ff7a5a"/><stop offset="0.6" stop-color="#e02a24"/><stop offset="1" stop-color="#a81814"/></radialGradient>
+<radialGradient id="lg" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#ffd070" stop-opacity="0.8"/><stop offset="1" stop-color="#ffd070" stop-opacity="0"/></radialGradient>
+<linearGradient id="tc" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c8281f"/><stop offset="1" stop-color="#9a1a16"/></linearGradient>
+</defs>
+<rect width="800" height="600" fill="url(#wall)"/><rect y="440" width="800" height="160" fill="url(#floor)"/>
+<rect x="40" y="40" width="74" height="330" fill="url(#rc)" stroke="url(#gold)" stroke-width="3"/>
+<text x="77" y="95" font-family="'Noto Sans TC','PingFang TC','Microsoft JhengHei',sans-serif" font-size="42" font-weight="800" text-anchor="middle" fill="#f8e08a">新</text>
+<text x="77" y="153" font-family="'Noto Sans TC','PingFang TC','Microsoft JhengHei',sans-serif" font-size="42" font-weight="800" text-anchor="middle" fill="#f8e08a">年</text>
+<text x="77" y="211" font-family="'Noto Sans TC','PingFang TC','Microsoft JhengHei',sans-serif" font-size="42" font-weight="800" text-anchor="middle" fill="#f8e08a">納</text>
+<text x="77" y="269" font-family="'Noto Sans TC','PingFang TC','Microsoft JhengHei',sans-serif" font-size="42" font-weight="800" text-anchor="middle" fill="#f8e08a">餘</text>
+<text x="77" y="327" font-family="'Noto Sans TC','PingFang TC','Microsoft JhengHei',sans-serif" font-size="42" font-weight="800" text-anchor="middle" fill="#f8e08a">慶</text>
+<rect x="686" y="40" width="74" height="330" fill="url(#rc)" stroke="url(#gold)" stroke-width="3"/>
+<text x="723" y="95" font-family="'Noto Sans TC','PingFang TC','Microsoft JhengHei',sans-serif" font-size="42" font-weight="800" text-anchor="middle" fill="#f8e08a">嘉</text>
+<text x="723" y="153" font-family="'Noto Sans TC','PingFang TC','Microsoft JhengHei',sans-serif" font-size="42" font-weight="800" text-anchor="middle" fill="#f8e08a">節</text>
+<text x="723" y="211" font-family="'Noto Sans TC','PingFang TC','Microsoft JhengHei',sans-serif" font-size="42" font-weight="800" text-anchor="middle" fill="#f8e08a">號</text>
+<text x="723" y="269" font-family="'Noto Sans TC','PingFang TC','Microsoft JhengHei',sans-serif" font-size="42" font-weight="800" text-anchor="middle" fill="#f8e08a">長</text>
+<text x="723" y="327" font-family="'Noto Sans TC','PingFang TC','Microsoft JhengHei',sans-serif" font-size="42" font-weight="800" text-anchor="middle" fill="#f8e08a">春</text>
+<rect x="260" y="40" width="280" height="62" fill="url(#rc)" stroke="url(#gold)" stroke-width="3"/><text x="400" y="86" font-family="'Noto Sans TC','PingFang TC','Microsoft JhengHei',sans-serif" font-size="40" font-weight="800" text-anchor="middle" fill="#f8e08a" letter-spacing="10">新年快樂</text>
+<g transform="translate(400 235) rotate(45)"><rect x="-70" y="-70" width="140" height="140" fill="url(#rc)" stroke="url(#gold)" stroke-width="4"/></g><text x="400" y="272" font-family="'Noto Sans TC','PingFang TC','Microsoft JhengHei',sans-serif" font-size="110" font-weight="800" text-anchor="middle" fill="#f8e08a">福</text>
+<path d="M190 0V70" stroke="#e0b13a" stroke-width="3"/><circle cx="190" cy="122" r="70" fill="url(#lg)" filter="url(#b8)"/><rect x="176" y="70" width="28" height="10" fill="url(#gold)"/>
+<ellipse cx="190" cy="128" rx="50" ry="46" fill="url(#lan)"/><path d="M166 84Q154 128 166 172M190 82V174M214 84Q226 128 214 172" stroke="#8a1612" stroke-width="2" fill="none" opacity="0.6"/><rect x="174" y="172" width="32" height="9" fill="url(#gold)"/><path d="M182 181v36M190 181v42M198 181v36" stroke="#e0b13a" stroke-width="3"/>
+<path d="M610 0V70" stroke="#e0b13a" stroke-width="3"/><circle cx="610" cy="122" r="70" fill="url(#lg)" filter="url(#b8)"/><rect x="596" y="70" width="28" height="10" fill="url(#gold)"/>
+<ellipse cx="610" cy="128" rx="50" ry="46" fill="url(#lan)"/><path d="M586 84Q574 128 586 172M610 82V174M634 84Q646 128 634 172" stroke="#8a1612" stroke-width="2" fill="none" opacity="0.6"/><rect x="594" y="172" width="32" height="9" fill="url(#gold)"/><path d="M602 181v36M610 181v42M618 181v36" stroke="#e0b13a" stroke-width="3"/>
+<ellipse cx="400" cy="586" rx="330" ry="14" fill="#000" opacity="0.4" filter="url(#b4)"/>
+<path d="M110 400H690L730 450H70Z" fill="#e8d8b4"/><rect x="70" y="450" width="660" height="26" fill="url(#tc)"/><path d="M70 476H730V560H70Z" fill="url(#tc)"/><path d="M70 476H730" stroke="url(#gold)" stroke-width="4"/>
+<ellipse cx="210" cy="424" rx="100" ry="24" fill="#b8a888"/><ellipse cx="210" cy="418" rx="100" ry="24" fill="#fbf6ea"/><ellipse cx="210" cy="418" rx="92" ry="21" fill="none" stroke="#e8c26a" stroke-width="1.5"/>
+<path d="M130 416Q170 388 230 400Q268 406 292 414Q268 428 230 432Q170 440 130 416Z" fill="#c8602a"/><path d="M130 416L108 398L112 428Z" fill="#b84e20"/><circle cx="270" cy="412" r="3" fill="#222"/><path d="M180 404Q200 396 222 402" stroke="#e8a060" stroke-width="2" fill="none"/><path d="M160 414Q200 408 250 414" stroke="#e8a060" stroke-width="1.5" fill="none" opacity="0.7"/><g fill="#4f8a3a"><circle cx="190" cy="408" r="4"/><circle cx="215" cy="414" r="4"/><circle cx="240" cy="408" r="4"/></g>
+<ellipse cx="420" cy="434" rx="90" ry="20" fill="#b8a888"/><ellipse cx="420" cy="428" rx="90" ry="20" fill="#fbf6ea"/><ellipse cx="420" cy="428" rx="82" ry="17" fill="none" stroke="#e8c26a" stroke-width="1.5"/>
+<path d="M346 424Q360 400 374 424Q360 430 346 424Z" fill="#fbf1dc" stroke="#e0cfa8" stroke-width="1.2"/><path d="M350 417l3 2l3 -3l3 3l3 -3l3 3l3 -2" stroke="#d8c498" stroke-width="1" fill="none"/>
+<path d="M374 424Q388 400 402 424Q388 430 374 424Z" fill="#fbf1dc" stroke="#e0cfa8" stroke-width="1.2"/><path d="M378 417l3 2l3 -3l3 3l3 -3l3 3l3 -2" stroke="#d8c498" stroke-width="1" fill="none"/>
+<path d="M402 424Q416 400 430 424Q416 430 402 424Z" fill="#fbf1dc" stroke="#e0cfa8" stroke-width="1.2"/><path d="M406 417l3 2l3 -3l3 3l3 -3l3 3l3 -2" stroke="#d8c498" stroke-width="1" fill="none"/>
+<path d="M430 424Q444 400 458 424Q444 430 430 424Z" fill="#fbf1dc" stroke="#e0cfa8" stroke-width="1.2"/><path d="M434 417l3 2l3 -3l3 3l3 -3l3 3l3 -2" stroke="#d8c498" stroke-width="1" fill="none"/>
+<path d="M360 438Q374 414 388 438Q374 444 360 438Z" fill="#fbf1dc" stroke="#e0cfa8" stroke-width="1.2"/><path d="M364 431l3 2l3 -3l3 3l3 -3l3 3l3 -2" stroke="#d8c498" stroke-width="1" fill="none"/>
+<path d="M388 438Q402 414 416 438Q402 444 388 438Z" fill="#fbf1dc" stroke="#e0cfa8" stroke-width="1.2"/><path d="M392 431l3 2l3 -3l3 3l3 -3l3 3l3 -2" stroke="#d8c498" stroke-width="1" fill="none"/>
+<path d="M416 438Q430 414 444 438Q430 444 416 438Z" fill="#fbf1dc" stroke="#e0cfa8" stroke-width="1.2"/><path d="M420 431l3 2l3 -3l3 3l3 -3l3 3l3 -2" stroke="#d8c498" stroke-width="1" fill="none"/>
+<path d="M444 438Q458 414 472 438Q458 444 444 438Z" fill="#fbf1dc" stroke="#e0cfa8" stroke-width="1.2"/><path d="M448 431l3 2l3 -3l3 3l3 -3l3 3l3 -2" stroke="#d8c498" stroke-width="1" fill="none"/>
+<ellipse cx="570" cy="420" rx="70" ry="8" fill="#000" opacity="0.25" filter="url(#b4)"/>
+<circle cx="540" cy="410" r="20" fill="#f39a2a"/><circle cx="534" cy="404" r="7" fill="#fff" opacity="0.25"/><path d="M540 390q8 -8 14 -4q-6 8 -14 4Z" fill="#4f8a3a"/>
+<circle cx="575" cy="416" r="20" fill="#f39a2a"/><circle cx="569" cy="410" r="7" fill="#fff" opacity="0.25"/><path d="M575 396q8 -8 14 -4q-6 8 -14 4Z" fill="#4f8a3a"/>
+<circle cx="558" cy="392" r="20" fill="#f39a2a"/><circle cx="552" cy="386" r="7" fill="#fff" opacity="0.25"/><path d="M558 372q8 -8 14 -4q-6 8 -14 4Z" fill="#4f8a3a"/>
+<rect x="620" y="394" width="80" height="34" rx="6" fill="#e0b13a"/><rect x="620" y="394" width="80" height="12" rx="6" fill="#f2d070"/><rect x="650" y="388" width="20" height="10" fill="#c8281f"/>
+<g transform="translate(240 530) rotate(-14)"><rect x="-34" y="-50" width="68" height="100" rx="4" fill="url(#rc)" stroke="url(#gold)" stroke-width="2"/><path d="M-34 -50L0 -18L34 -50" fill="#a81814" stroke="url(#gold)" stroke-width="2"/><circle cx="0" cy="-18" r="8" fill="url(#gold)"/><text x="0" y="28" font-family="'Noto Sans TC','PingFang TC','Microsoft JhengHei',sans-serif" font-size="26" font-weight="800" text-anchor="middle" fill="#f8e08a">福</text></g>
+<g transform="translate(320 520) rotate(6)"><rect x="-34" y="-50" width="68" height="100" rx="4" fill="url(#rc)" stroke="url(#gold)" stroke-width="2"/><path d="M-34 -50L0 -18L34 -50" fill="#a81814" stroke="url(#gold)" stroke-width="2"/><circle cx="0" cy="-18" r="8" fill="url(#gold)"/><text x="0" y="28" font-family="'Noto Sans TC','PingFang TC','Microsoft JhengHei',sans-serif" font-size="26" font-weight="800" text-anchor="middle" fill="#f8e08a">福</text></g>
+<g transform="translate(400 534) rotate(18)"><rect x="-34" y="-50" width="68" height="100" rx="4" fill="url(#rc)" stroke="url(#gold)" stroke-width="2"/><path d="M-34 -50L0 -18L34 -50" fill="#a81814" stroke="url(#gold)" stroke-width="2"/><circle cx="0" cy="-18" r="8" fill="url(#gold)"/><text x="0" y="28" font-family="'Noto Sans TC','PingFang TC','Microsoft JhengHei',sans-serif" font-size="26" font-weight="800" text-anchor="middle" fill="#f8e08a">福</text></g>
+<g fill="url(#gold)"><circle cx="540" cy="520" r="14"/><circle cx="566" cy="530" r="14"/><circle cx="594" cy="522" r="14"/><circle cx="552" cy="545" r="14"/></g><g fill="#a07010"><rect x="536" y="516" width="8" height="8"/><rect x="562" y="526" width="8" height="8"/><rect x="590" y="518" width="8" height="8"/><rect x="548" y="541" width="8" height="8"/></g>
+<circle cx="200.6" cy="435.2" r="2.7" fill="#ffd070" opacity="0.3"/>
+<circle cx="567.8" cy="20.9" r="2.4" fill="#ffd070" opacity="0.5"/>
+<circle cx="671.2" cy="458.9" r="1.1" fill="#ffd070" opacity="0.7"/>
+<circle cx="587.6" cy="32.5" r="2.4" fill="#ffd070" opacity="0.4"/>
+<circle cx="422.1" cy="533.6" r="2.5" fill="#ffd070" opacity="0.5"/>
+<circle cx="628.9" cy="557.5" r="2.7" fill="#ffd070" opacity="0.8"/>
+<circle cx="378.8" cy="32.6" r="2.5" fill="#ffd070" opacity="0.7"/>
+<circle cx="182.0" cy="354.9" r="2.3" fill="#ffd070" opacity="0.8"/>
+<circle cx="781.4" cy="251.9" r="1.2" fill="#ffd070" opacity="0.6"/>
+<circle cx="127.5" cy="245.0" r="1.2" fill="#ffd070" opacity="0.4"/>
+<circle cx="48.2" cy="534.7" r="2.7" fill="#ffd070" opacity="0.8"/>
+<circle cx="25.3" cy="78.3" r="1.4" fill="#ffd070" opacity="0.6"/>
+<circle cx="490.5" cy="583.8" r="1.9" fill="#ffd070" opacity="0.7"/>
+<circle cx="653.9" cy="90.9" r="1.3" fill="#ffd070" opacity="0.4"/>
+<circle cx="76.2" cy="560.7" r="2.3" fill="#ffd070" opacity="0.3"/>
+<circle cx="598.9" cy="47.7" r="1.3" fill="#ffd070" opacity="0.5"/>
+<circle cx="643.7" cy="173.1" r="2.8" fill="#ffd070" opacity="0.6"/>
+<circle cx="492.9" cy="374.1" r="1.8" fill="#ffd070" opacity="0.5"/>
+<circle cx="566.4" cy="349.3" r="2.1" fill="#ffd070" opacity="0.5"/>
+<circle cx="503.8" cy="473.3" r="1.4" fill="#ffd070" opacity="0.5"/>
+<circle cx="666.8" cy="300.6" r="1.4" fill="#ffd070" opacity="0.5"/>
+<circle cx="674.1" cy="233.0" r="1.2" fill="#ffd070" opacity="0.6"/>
+<circle cx="179.9" cy="170.4" r="1.3" fill="#ffd070" opacity="0.6"/>
+<circle cx="110.2" cy="518.2" r="2.7" fill="#ffd070" opacity="0.3"/>
+<circle cx="368.0" cy="272.0" r="2.6" fill="#ffd070" opacity="0.5"/>
+<circle cx="621.3" cy="252.5" r="1.4" fill="#ffd070" opacity="0.8"/>
+<circle cx="584.5" cy="512.4" r="1.5" fill="#ffd070" opacity="0.4"/>
+<circle cx="408.2" cy="286.1" r="2.0" fill="#ffd070" opacity="0.6"/>
+<circle cx="387.6" cy="5.3" r="2.8" fill="#ffd070" opacity="0.7"/>
+<circle cx="203.0" cy="251.8" r="2.4" fill="#ffd070" opacity="0.4"/>
+<circle cx="505.0" cy="469.8" r="3.0" fill="#ffd070" opacity="0.7"/>
+<circle cx="257.3" cy="408.5" r="1.8" fill="#ffd070" opacity="0.7"/>
+<circle cx="247.6" cy="218.3" r="2.0" fill="#ffd070" opacity="0.3"/>
+<circle cx="182.1" cy="71.8" r="2.1" fill="#ffd070" opacity="0.3"/>
+<circle cx="173.5" cy="330.6" r="2.7" fill="#ffd070" opacity="0.6"/>
+<circle cx="36.5" cy="432.4" r="2.7" fill="#ffd070" opacity="0.5"/>
+<circle cx="402.3" cy="216.3" r="2.3" fill="#ffd070" opacity="0.5"/>
+<circle cx="266.4" cy="362.3" r="2.3" fill="#ffd070" opacity="0.8"/>
+<circle cx="179.0" cy="564.0" r="2.5" fill="#ffd070" opacity="0.3"/>
+<circle cx="494.2" cy="207.6" r="1.4" fill="#ffd070" opacity="0.8"/>
+<rect width="800" height="600" fill="url(#vig)"/>
+<rect width="800" height="600" filter="url(#grain)" opacity="0.07"/>
+</svg>

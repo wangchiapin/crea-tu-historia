@@ -4,10 +4,12 @@ const path = require('path');
 const OpenCC = require('opencc-js');
 const { IMAGES, ORDER, R } = require('./content-src.js');
 const { IMAGES2, TPL, H } = require('./content-src2.js');
+const IMAGES3 = ['c', 'd', 'e', 'f'].reduce((a, k) => { try { return a.concat(require('./data-' + k + '.js')); } catch (e) { if (e.code !== 'MODULE_NOT_FOUND') throw e; return a; } }, []);
+const ALL2 = IMAGES2.concat(IMAGES3);
 const toSC = OpenCC.Converter({ from: 'tw', to: 'cn' });
 const both = (s) => ({ tc: s, sc: toSC(s) });
 
-const images = IMAGES.concat(IMAGES2).map((im) => ({
+const images = IMAGES.concat(ALL2).map((im) => ({
   id: im.id,
   src: im.src || ('images/' + im.id + '.svg'),
   name: both(im.name),
@@ -21,7 +23,7 @@ const rules = R.map((row, ri) => {
   const s = {};
   ORDER.forEach((id, i) => { s[id] = both(sents[i]); });
   // 第二批圖片：用範本填空產生（沒有範本、或該圖不適用的就不放）
-  IMAGES2.forEach((im) => {
+  ALL2.forEach((im) => {
     const f = TPL[ri];
     if (!f || im.skip.includes(ri) || (im.home && H(im).includes(ri))) return;
     const x = f(im);
