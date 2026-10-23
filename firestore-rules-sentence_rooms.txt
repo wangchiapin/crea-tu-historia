@@ -3,10 +3,24 @@
 // 和 memorama_rooms 放在同一層。它用到你規則裡已經有的 signedIn()。
 //
 // 行為：
-// - 老師（匿名登入）開房：4 位數房號，6 小時後過期（rules 限制最長 7 小時）
-// - 學生（匿名登入）只能讀，不能寫
+// - 只有「授權老師」（用 Google 登入、信箱在下面名單裡）能開房：4 位數房號，6 小時後過期（rules 限制最長 7 小時）
+// - 學生（匿名登入）只能讀，不能寫；不用登入帳號
+// - 其他老師登入 Google 也開不了房，但單機版照常能用
+// - ★ 貼上之前，把下面 sdOwner() 裡的 '你的Gmail@gmail.com' 換成你自己的信箱（要多開放一位老師，就在中括號裡多加一個，用逗號分開）
+// - 同時要在 Firebase 的 Authentication 開啟「Google」登入，並確認「已授權網域」有 wangchiapin.github.io
 // - 只有開房的老師能更新、刪除；過期的房間任何人都可以接手同房號
 // - 老師專用的例句建議「不會」寫進這個文件（只存圖片代號、語法點名稱、故事句子、計時狀態）
+// - 老師自己上傳的圖片，抽到時會把縮小後的圖（約 100–300KB）放在 ia 欄位、名稱放在 inm 欄位，讓學生看得到
+
+    // ---- 造句小劇場：授權老師名單 ----
+    function sdOwner() {
+      return request.auth != null && request.auth.token.email_verified == true
+        && request.auth.token.email in ['你的Gmail@gmail.com'];
+    }
+    // 網頁用「讀得到這個不存在的文件」來確認登入的人是不是授權老師（不需要真的建立文件）
+    match /sentence_owner/{d} {
+      allow read: if sdOwner();
+    }
 
     // ---- 造句小劇場 連線房間 ----
     match /sentence_rooms/{code} {
@@ -14,9 +28,11 @@
       function old() { return resource.data; }
       function reclaimable() { return old().expireAt < request.time; }
       function okShape() {
-        return r().keys().hasOnly(['code','hostUid','mode','img','g','story','tm','seq','createdAt','expireAt'])
+        return r().keys().hasOnly(['code','hostUid','mode','img','ia','inm','g','story','tm','seq','createdAt','expireAt'])
           && r().mode in ['sentence','story']
           && (r().img == null || (r().img is string && r().img.size() <= 20))
+          && (r().ia == null || (r().ia is string && r().ia.size() <= 400000))
+          && (r().inm == null || (r().inm is map && r().inm.tc is string && r().inm.tc.size() <= 60 && r().inm.sc is string && r().inm.sc.size() <= 60))
           && (r().g == null || (r().g is map && r().g.tc is string && r().g.tc.size() <= 80
                                 && r().g.sc is string && r().g.sc.size() <= 80))
           && (r().story == null || (r().story is map && r().story.tc is string && r().story.tc.size() <= 300
@@ -41,7 +57,7 @@
           && okShape();
       }
       allow read: if signedIn();
-      allow create: if signedIn() && validNew();
-      allow update: if signedIn() && ((reclaimable() && validNew()) || (!reclaimable() && hostUpdate()));
+      allow create: if signedIn() && sdOwner() && validNew();
+      allow update: if signedIn() && ((reclaimable() && sdOwner() && validNew()) || (!reclaimable() && hostUpdate()));
       allow delete: if signedIn() && (reclaimable() || request.auth.uid == old().hostUid);
     }

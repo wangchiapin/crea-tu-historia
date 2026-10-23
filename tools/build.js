@@ -37,12 +37,19 @@ IMAGES.filter((im) => im.like).forEach((im) => rules.forEach((r) => { r.s[im.id]
 
 const head = '// 由 tools/build.js 自動產生，請改 tools/content-src.js 後重新執行，不要直接改這個檔。\n';
 fs.writeFileSync(path.join(__dirname, '..', 'content.js'), head + 'window.SD_IMAGES=' + JSON.stringify(images) + ';\n');
-fs.writeFileSync(path.join(__dirname, '..', 'hints.js'), head + '// 老師專用：例句建議。學生端不會載入這個檔。\nwindow.SD_RULES=' + JSON.stringify(rules) + ';\n');
+// 例句建議拆兩份：配得到第 1–2 冊語法點的（所有老師），和只配得到第 3–6 冊的（授權老師登入後才載入）
+global.window = {}; require('../grammar-b12.js'); require('../grammar-b36.js');
+const pts12 = window.GRAMMAR_LITE.points.slice();
+const ptsAll = pts12.concat(window.GRAMMAR_MORE.points);
+const r12 = rules.filter((r) => pts12.some((p) => new RegExp(r.re).test(p.t)));
+const r36 = rules.filter((r) => !r12.includes(r));
+fs.writeFileSync(path.join(__dirname, '..', 'hints.js'), head + '// 老師專用：例句建議（第 1–2 冊）。學生端不會載入這個檔。\nwindow.SD_RULES=' + JSON.stringify(r12) + ';\n');
+fs.writeFileSync(path.join(__dirname, '..', 'hints-b36.js'), head + '// 老師專用：例句建議（第 3–6 冊），授權老師登入後才載入。\nwindow.SD_RULES_MORE=' + JSON.stringify(r36) + ';\n');
+console.log('hints rules', r12.length, '+', r36.length);
 console.log('images', images.length, 'rules', rules.length);
 
 // 統計有多少語法點能配到建議
-global.window = {};
-require('../grammar-lite.js');
+window.GRAMMAR_LITE.points = ptsAll;
 let hit = 0; const miss = [];
 window.GRAMMAR_LITE.points.forEach((p) => {
   const r = rules.find((x) => new RegExp(x.re).test(p.t));

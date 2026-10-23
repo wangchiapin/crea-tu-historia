@@ -38,9 +38,18 @@
 2. 在 `tools/content-src2.js` 的 `IMAGES2` 加上這張圖和它的填空資料，例句會由範本自動產生。
 3. `cd tools && npm install && node build.js`
 
+## 誰能用什麼
+
+- **一般老師（不用登入）：** 單機版，螢幕分享給學生；有第 1–2 冊的語法點，也能自己建立語法點。
+- **授權老師（Google 登入，信箱在規則名單裡）：** 多了連線功能和第 3–6 冊語法點。
+- **學生：** 輸入房號就能加入，不用登入。
+- 這是「介面上」的限制；檔案在公開的 GitHub，有心的人仍可直接下載。連線限制則是 Firebase 規則擋的，改網頁繞不過去。
+
 ## 連線設定（第一次要做）
 
-把 `firestore-rules-sentence_rooms.txt` 的內容貼進 memorma-24dab 的 Firestore 規則並發布。沒貼之前，「開啟連線」會失敗，單機模式不受影響。
+1. 把 `firestore-rules-sentence_rooms.txt` 的內容貼進 memorma-24dab 的 Firestore 規則並發布（先把 `你的Gmail@gmail.com` 換成你的信箱）。
+2. Firebase → Authentication → 開啟「Google」登入，已授權網域要有 `wangchiapin.github.io`。
+沒貼之前，「開啟連線」會失敗，單機模式不受影響。
 
 測試用：網址加 `?local=1`，同一個瀏覽器的不同分頁可以當老師和學生（不用網路）。
 
@@ -50,6 +59,8 @@
 |---|---|
 | `index.html` | 整個遊戲（老師端、學生端、設定、連線） |
 | `content.js` / `hints.js` | 由 `tools/build.js` 產生，不要手改 |
-| `grammar-lite.js` | 語法點精簡資料（老師端才載入） |
+| `grammar-b12.js` / `grammar-b36.js` | 語法點精簡資料：第 1–2 冊（所有老師）／第 3–6 冊（授權老師登入後才載入） |
+| `grammar-ex.js` | 教材例句（只有授權老師登入後才載入；公開版的語法點只有名稱） |
+| `hints.js` / `hints-b36.js` | 老師專用例句建議，同樣分兩份 |
 | `images/*.svg` | 60 張圖片卡（`tools/img/` 是畫圖的程式） |
 | `firestore-rules-sentence_rooms.txt` | 連線房間的 Firestore 規則 |

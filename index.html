@@ -85,6 +85,11 @@ details.bk>summary{padding:8px 10px;cursor:pointer;font-weight:600;display:flex;
 .plist .pf{cursor:pointer;border-bottom:1px dotted var(--mute)}
 .plist .pf:hover{background:#efe6cf}
 .plist .id{color:var(--mute);font-size:11px;min-width:34px}
+.ulist{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.uimg{display:flex;gap:10px;border:1.5px solid var(--line);border-radius:6px;padding:8px;background:#fbf8f0}
+.uimg img{width:96px;height:72px;object-fit:cover;border-radius:4px;flex:none}
+.uimg .uf{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}
+.uimg input[type=text]{width:100%;min-width:0}
 .imgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:10px}
 .imgs label{border:1.5px solid var(--line);border-radius:6px;overflow:hidden;background:#fbf8f0;cursor:pointer;font-size:13px}
 .imgs img{display:block;width:100%;aspect-ratio:4/3;object-fit:cover}
@@ -129,6 +134,9 @@ const T = {
   roomNo: ['輸入 4 位數房號', '输入 4 位数房号'], join: ['加入', '加入'],
   badRoom: ['找不到這個房間，請問老師房號', '找不到这个房间，请问老师房号'],
   expired: ['這個房間已經結束了', '这个房间已经结束了'],
+  loginFail: ['登入沒有完成，請再試一次', '登录没有完成，请再试一次'],
+  notOwner: ['連線功能僅限授權老師使用。單機版可以照常使用。', '连线功能仅限授权老师使用。单机版可以照常使用。'],
+  fullLogin: ['授權老師登入', '授权老师登录'], fullOn: ['✓ 完整版', '✓ 完整版'], logout: ['登出', '登出'], offline: ['單機版', '单机版'],
   connFail: ['連線失敗，請檢查網路後再試', '连线失败，请检查网络后再试'],
   tabS: ['造句抽選', '造句抽选'], tabStory: ['編故事', '编故事'], tabSet: ['設定', '设置'], tabErr: ['常錯語法', '常错语法'],
   stuLab: ['學生', '学生'], stuPh: ['輸入學生姓名', '输入学生姓名'], stuAdd: ['加入', '加入'], stuNone: ['（先加入學生姓名，才能記錄用錯的語法）', '（先加入学生姓名，才能记录用错的语法）'],
@@ -171,6 +179,9 @@ const T = {
   search: ['搜尋語法點…', '搜索语法点…'], allOn: ['全選', '全选'], allOff: ['全不選', '全不选'],
   setCustom: ['自訂語法點', '自订语法点'], cTitle: ['語法點名稱，例如：連……都……', '语法点名称，例如：连……都……'],
   cEx: ['例句（選填）', '例句（选填）'], add: ['新增', '新增'], del: ['刪除', '删除'],
+  setMine: ['我的圖片', '我的图片'], uAdd: ['＋ 上傳圖片', '＋ 上传图片'], uOn: ['會被抽到', '会被抽到'], uName: ['圖片名稱', '图片名称'], uWords: ['這張圖可以用的詞（用頓號隔開，可不填）', '这张图可以用的词（用顿号隔开，可不填）'],
+  uNote: ['照片會完整縮小放進 4:3 的框（不裁切，空白處補淡色），只存在這台裝置。連線時，抽到你的圖片才會傳給學生。上限 40 張。', '照片会完整缩小放进 4:3 的框（不裁切，空白处补淡色），只存在这台设备。连线时，抽到你的图片才会传给学生。上限 40 张。'],
+  uMax: ['最多 40 張，請先刪掉一些', '最多 40 张，请先删掉一些'], uFail: ['這張圖片沒辦法使用', '这张图片没办法使用'], uOk: ['已加入', '已加入'], uDefName: ['我的圖片', '我的图片'],
   setImgs: ['圖片卡（勾選＝會被抽到）', '图片卡（勾选＝会被抽到）'],
   setOther: ['其他', '其他'], noRepeat: ['抽過的不再重複（抽完一輪再重來）', '抽过的不再重复（抽完一轮再重来）'],
   poolEmpty: ['抽選範圍是空的，請到「設定」選至少一冊或自訂語法點，並勾選圖片', '抽选范围是空的，请到“设置”选至少一册或自订语法点，并勾选图片'],
@@ -212,28 +223,29 @@ function fb() {
     const app = A.initializeApp(FB.cfg, 'sentencedraw');
     const auth = Au.getAuth(app);
     if (!auth.currentUser) await Au.signInAnonymously(auth); else await auth.authStateReady();
-    return { F, db: F.getFirestore(app), uid: auth.currentUser.uid };
+    return { F, Au, auth, db: F.getFirestore(app) };
   })().catch((e) => { fbp = null; throw e; });
   return fbp;
 }
+async function authed() { const x = await fb(); if (!x.auth.currentUser) await x.Au.signInAnonymously(x.auth); return x; }
 const rnd4 = () => String(Math.floor(1000 + Math.random() * 9000));
 
 const FireSync = {
   async create(doc) {
-    const { F, db, uid } = await fb();
+    const { F, db, auth } = await authed();
     for (let i = 0; i < 12; i++) {
       const code = rnd4();
       try {
-        await F.setDoc(F.doc(db, COL, code), Object.assign({ code, hostUid: uid, createdAt: F.serverTimestamp(), expireAt: F.Timestamp.fromMillis(Date.now() + 6 * 3600e3) }, doc));
+        await F.setDoc(F.doc(db, COL, code), Object.assign({ code, hostUid: auth.currentUser.uid, createdAt: F.serverTimestamp(), expireAt: F.Timestamp.fromMillis(Date.now() + 6 * 3600e3) }, doc));
         return code;
       } catch (e) { if (e && e.code !== 'permission-denied') throw e; }
     }
     throw new Error('no-code');
   },
-  async publish(code, doc) { const { F, db } = await fb(); await F.updateDoc(F.doc(db, COL, code), doc); },
-  async close(code) { const { F, db } = await fb(); await F.deleteDoc(F.doc(db, COL, code)); },
+  async publish(code, doc) { const { F, db } = await authed(); await F.updateDoc(F.doc(db, COL, code), doc); },
+  async close(code) { const { F, db } = await authed(); await F.deleteDoc(F.doc(db, COL, code)); },
   async subscribe(code, cb, errcb) {
-    const { F, db } = await fb();
+    const { F, db } = await authed();
     return F.onSnapshot(F.doc(db, COL, code), (snap) => {
       const d = snap.exists() ? snap.data() : null;
       if (d && d.expireAt && d.expireAt.toMillis && d.expireAt.toMillis() < Date.now()) return cb(null);
@@ -270,7 +282,8 @@ let teacherDataReady = false;
 let sUnsub = null, sState = null, sCode = null, sErr = '';
 let clock = { k: null, total: 0, base: 0, t0: 0, h: null, lastN: -1, lastSeq: -1 };
 
-const IMGS = () => window.SD_IMAGES || [];
+let UIMGS = [];   // 老師自己上傳的圖片（存在這台裝置的 IndexedDB）
+const IMGS = () => (window.SD_IMAGES || []).concat(UIMGS);
 const imgById = (id) => IMGS().find((i) => i.id === id);
 const G = () => window.GRAMMAR_LITE;
 
@@ -278,9 +291,49 @@ const G = () => window.GRAMMAR_LITE;
 function loadScript(src) { return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('load ' + src)); document.head.appendChild(s); }); }
 async function ensureTeacherData() {
   if (teacherDataReady) return;
-  await Promise.all([loadScript('grammar-lite.js'), loadScript('hints.js')]);
+  await Promise.all([loadScript('grammar-b12.js'), loadScript('hints.js')]);
   window.SD_RULEX = (window.SD_RULES || []).map((r) => ({ re: new RegExp(r.re), s: r.s }));
   teacherDataReady = true;
+  loadUserImgs().then(() => { if (role === 'teacher' && UIMGS.length) render(); });
+  if (LOCAL) await loadOwnerData();
+  else if (lsGet('sd_owner') === '1') verifyOwner().then((ok) => { if (ok && role === 'teacher') render(); });
+}
+/* ---- 授權老師（只有你的 Gmail）：登入後才載入第 3–6 冊語法點和例句，並且才能開連線 ---- */
+let owner = false;
+const lsGet = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
+const lsSet = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} };
+async function loadOwnerData() {
+  if (owner) return;
+  await Promise.all([loadScript('grammar-b36.js'), loadScript('hints-b36.js'), loadScript('grammar-ex.js')]);
+  const M = window.GRAMMAR_MORE;
+  window.GRAMMAR_LITE.points.forEach((p) => { if (window.GRAMMAR_EX[p.id]) p.ex = window.GRAMMAR_EX[p.id]; });
+  window.GRAMMAR_LITE.points = window.GRAMMAR_LITE.points.concat(M.points);
+  Object.assign(window.GRAMMAR_LITE.books, M.books);
+  window.SD_RULEX = window.SD_RULEX.concat((window.SD_RULES_MORE || []).map((r) => ({ re: new RegExp(r.re), s: r.s })));
+  owner = true;
+}
+async function checkOwner() {
+  try { const { F, db } = await fb(); await F.getDoc(F.doc(db, 'sentence_owner', 'me')); return true; } catch (e) { return false; }
+}
+async function verifyOwner() {
+  try {
+    const { auth } = await fb(); await auth.authStateReady();
+    if (!auth.currentUser || auth.currentUser.isAnonymous) { lsSet('sd_owner', null); return false; }
+    if (!(await checkOwner())) { lsSet('sd_owner', null); return false; }
+    await loadOwnerData(); return true;
+  } catch (e) { return false; }
+}
+async function ownerLogin() {
+  let x;
+  try { x = await fb(); } catch (e) { toast(t('connFail')); return false; }
+  try { await x.auth.authStateReady(); if (!x.auth.currentUser || x.auth.currentUser.isAnonymous) await x.Au.signInWithPopup(x.auth, new x.Au.GoogleAuthProvider()); }
+  catch (e) { toast(t('loginFail')); return false; }
+  if (!(await checkOwner())) { try { await x.Au.signOut(x.auth); } catch (e) {} lsSet('sd_owner', null); toast(t('notOwner'), 5000); return false; }
+  lsSet('sd_owner', '1'); await loadOwnerData(); return true;
+}
+async function ownerLogout() {
+  try { const x = await fb(); await x.Au.signOut(x.auth); } catch (e) {}
+  lsSet('sd_owner', null); location.reload();
 }
 
 /* ================= 語法點池 ================= */
@@ -291,10 +344,16 @@ const HIDE_BOOKS = [5, 6];
 const SHOWN = () => G().points.filter((p) => !HIDE_BOOKS.includes(p.b));
 function shownRange() { const b = Object.keys(G().books).map(Number).filter((x) => !HIDE_BOOKS.includes(x)); return b.length ? (b.length > 1 ? b[0] + '–' + b[b.length - 1] : String(b[0])) : '—'; }
 function migrateRange() {
-  if (S.rangeInit || !G()) return;
-  const keep = S.books && S.books.length ? S.books : [1];
-  S.excluded = Array.from(new Set(S.excluded.concat(G().points.filter((p) => !keep.includes(p.b)).map((p) => p.id))));
-  S.rangeInit = true; saveS();
+  if (!G()) return;
+  const have = Object.keys(G().books).map(Number);
+  if (!S.rangeInit) {
+    const keep = S.books && S.books.length ? S.books : [1];
+    S.excluded = Array.from(new Set(S.excluded.concat(G().points.filter((p) => !keep.includes(p.b)).map((p) => p.id))));
+    S.rangeInit = true; S.rangeBooks = have.slice(); saveS();
+  } else if (!S.rangeBooks) { S.rangeBooks = [1, 2, 3, 4, 5, 6]; saveS(); }   // 之前已經用過的人：第 1–6 冊都處理過了
+  /* 之後才載入的冊（授權老師登入後的第 3–6 冊）預設不抽，要自己勾 */
+  const fresh = have.filter((b) => !(S.rangeBooks || []).includes(b));
+  if (fresh.length) { S.excluded = Array.from(new Set(S.excluded.concat(G().points.filter((p) => fresh.includes(p.b)).map((p) => p.id)))); S.rangeBooks = (S.rangeBooks || []).concat(fresh); saveS(); }
 }
 function pool() {
   migrateRange();
@@ -309,7 +368,7 @@ function gTag(g) { return g.custom ? t('custom') : t('book') + g.tagB + t('bookU
 
 /* ================= 畫面外框 ================= */
 const app = $('#app');
-function toast(m) { const e = $('#toast'); e.textContent = m; e.classList.remove('hide'); clearTimeout(toast.h); toast.h = setTimeout(() => e.classList.add('hide'), 2200); }
+function toast(m, ms) { const e = $('#toast'); e.textContent = m; e.classList.remove('hide'); clearTimeout(toast.h); toast.h = setTimeout(() => e.classList.add('hide'), ms || 2200); }
 function langBtn() { return '<button class="chip" data-a="lang">' + (S.lang === 'sc' ? '繁' : '简') + '</button>'; }
 
 function render() {
@@ -334,8 +393,10 @@ function renderHome() {
 }
 
 /* ---------- 卡片 ---------- */
-function imgCard(imgId) {
-  const im = imgById(imgId);
+const okDataImg = (v) => typeof v === 'string' && v.startsWith('data:image/jpeg;base64,') && v.length < 400000;
+function imgCard(imgId, sd) {
+  let im = imgById(imgId);
+  if (!im && sd && okDataImg(sd.ia)) im = { src: sd.ia, name: sd.inm && typeof sd.inm.tc === 'string' ? sd.inm : { tc: '', sc: '' } };
   if (!im) return '<div class="card img"><div class="lab">' + t('lblImg') + '</div><div class="empty">—</div></div>';
   return '<div class="card img"><div class="lab">' + t('lblImg') + '</div><img src="' + esc(im.src) + '" alt="' + esc(SC() ? im.name.sc : im.name.tc) + '"><div class="cap">' + esc(SC() ? im.name.sc : im.name.tc) + '</div></div>';
 }
@@ -370,7 +431,8 @@ function roomBar() {
     return '<div class="roombar"><span class="pill live">' + t('live') + '</span><span class="note">' + t('roomLabel') + '</span><span class="code" id="roomCode">' + room.code + '</span>' +
       '<span class="note grow">' + t('roomHelp') + '</span><button class="btn small" data-a="copylink" data-url="' + esc(url) + '">' + t('copyLink') + '</button><button class="btn small danger" data-a="endroom">' + t('endRoom') + '</button></div>';
   }
-  return '<div class="roombar"><span class="pill">' + t('online') + '</span><span class="note grow">' + (roomBusy ? t('creating') : t('netOffer')) + '</span><button class="btn small primary" data-a="openroom"' + (roomBusy ? ' disabled' : '') + '>' + t('openRoom') + '</button></div>';
+  const acct = LOCAL ? '' : (owner ? '<span class="pill live">' + t('fullOn') + '</span><button class="btn small" data-a="ologout">' + t('logout') + '</button>' : '<button class="btn small" data-a="ologin">' + t('fullLogin') + '</button>');
+  return '<div class="roombar"><span class="pill">' + t('online') + '</span><span class="note grow">' + (roomBusy ? t('creating') : t('netOffer')) + '</span>' + acct + '<button class="btn small primary" data-a="openroom"' + (roomBusy ? ' disabled' : '') + '>' + t('openRoom') + '</button></div>';
 }
 function curG() { return cur.g ? { title: gText(cur.g), tag: gTag(cur.g) } : null; }
 
@@ -386,8 +448,8 @@ function hintsHtml() {
     const sg = rule && rule.s[im.id];
     inner += sg ? '<div class="sug">' + esc(SC() ? sg.sc : sg.tc) + '</div>' : '<div class="note">' + t('noSug') + '</div>';
     const exs = (cur.g.ex || []).slice(0, 2);
-    inner += '<div class="sub">' + t('exLab') + '</div>';
-    inner += exs.length ? '<ul class="exl">' + exs.map((e) => '<li>' + esc(SC() ? e.s : e.c) + '</li>').join('') + '</ul>' : '<div class="note">' + t('customNoEx') + '</div>';
+    if (exs.length || cur.g.custom) inner += '<div class="sub">' + t('exLab') + '</div>';
+    if (exs.length || cur.g.custom) inner += exs.length ? '<ul class="exl">' + exs.map((e) => '<li>' + esc(SC() ? e.s : e.c) + '</li>').join('') + '</ul>' : '<div class="note">' + t('customNoEx') + '</div>';
   }
   if (im) {
     inner += '<div class="sub">' + t('wordsLab') + '</div><div class="words">' + im.words.map((w) => '<span>' + esc(SC() ? w.sc : w.tc) + '</span>').join('') + '</div>';
@@ -482,10 +544,61 @@ function teacherStory() {
     (isStory ? hintsHtml() : '');
 }
 
+/* ---- 自己上傳圖片 ---- */
+const UMAX = 40;
+function idb() {
+  return new Promise((res, rej) => {
+    const r = indexedDB.open('sd_user_imgs', 1);
+    r.onupgradeneeded = () => r.result.createObjectStore('imgs', { keyPath: 'id' });
+    r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error);
+  });
+}
+async function idbDo(mode, fn) { const d = await idb(); return new Promise((res, rej) => { const tx = d.transaction('imgs', mode); const st = tx.objectStore('imgs'); const q = fn(st); tx.oncomplete = () => res(q && q.result); tx.onerror = () => rej(tx.error); }); }
+async function loadUserImgs() { try { UIMGS = ((await idbDo('readonly', (st) => st.getAll())) || []).sort((a, b) => a.t - b.t); } catch (e) { UIMGS = []; } }
+function fileToJpeg(file) {
+  return new Promise((res, rej) => {
+    const url = URL.createObjectURL(file); const im = new Image();
+    im.onload = () => {
+      const c = document.createElement('canvas'); c.width = 800; c.height = 600; const x = c.getContext('2d');
+      const k = Math.min(800 / im.naturalWidth, 600 / im.naturalHeight), w = im.naturalWidth * k, h = im.naturalHeight * k;   // 完整放進 4:3，不裁切，多出來的空白用淡色補
+      x.fillStyle = '#f1ede4'; x.fillRect(0, 0, 800, 600); x.drawImage(im, (800 - w) / 2, (600 - h) / 2, w, h);
+      URL.revokeObjectURL(url);
+      let q = 0.8, out = c.toDataURL('image/jpeg', q);
+      while (out.length > 330000 && q > 0.35) { q -= 0.1; out = c.toDataURL('image/jpeg', q); }
+      out.length > 330000 ? rej(new Error('big')) : res(out);
+    };
+    im.onerror = () => { URL.revokeObjectURL(url); rej(new Error('bad')); };
+    im.src = url;
+  });
+}
+async function addUserImgs(files) {
+  let n = 0;
+  for (const f of files) {
+    if (UIMGS.length >= UMAX) { toast(t('uMax')); break; }
+    if (!/^image\//.test(f.type)) continue;
+    try {
+      const src = await fileToJpeg(f);
+      const nm = both((f.name || '').replace(/\.[^.]+$/, '').slice(0, 20) || t('uDefName'));
+      const rec = { id: 'u_' + Date.now().toString(36) + Math.floor(Math.random() * 99), src, name: nm, words: [], t: Date.now() };
+      await idbDo('readwrite', (st) => st.put(rec)); UIMGS.push(rec); n++;
+    } catch (e) { toast(t('uFail')); }
+  }
+  if (n) { toast(t('uOk') + ' ' + n); render(); }
+}
+function userImgsHtml() {
+  const rows = UIMGS.map((i) => '<div class="uimg" data-id="' + i.id + '"><img src="' + esc(i.src) + '" alt=""><div class="uf">' +
+    '<input type="text" data-a="uname" value="' + esc(SC() ? i.name.sc : i.name.tc) + '" placeholder="' + esc(t('uName')) + '" maxlength="20">' +
+    '<input type="text" data-a="uwords" value="' + esc(i.words.map((w) => (SC() ? w.sc : w.tc)).join('、')) + '" placeholder="' + esc(t('uWords')) + '">' +
+    '<div class="row"><label><input type="checkbox" data-a="img" data-v="' + i.id + '"' + (S.imgsOff.includes(i.id) ? '' : ' checked') + '> ' + t('uOn') + '</label><button class="btn small danger" data-a="udel" data-v="' + i.id + '">' + t('del') + '</button></div></div></div>').join('');
+  return '<div class="sec"><h2>' + t('setMine') + ' <span class="note">' + UIMGS.length + '/' + UMAX + '</span></h2>' +
+    '<div class="row"><label class="btn primary" for="uFile">' + t('uAdd') + '</label><input type="file" id="uFile" accept="image/*" multiple hidden></div>' +
+    '<p class="note" style="margin:8px 0">' + t('uNote') + '</p>' + (rows ? '<div class="ulist">' + rows + '</div>' : '') + '</div>';
+}
 function teacherSettings() {
   const customs = S.customs.map((c) => '<div class="cust"><input type="checkbox" data-a="custon" data-v="' + c.id + '"' + (c.on ? ' checked' : '') + '><span class="t">' + esc(SC() ? c.sc : c.tc) + (c.ex ? '<br><span class="note">' + esc(SC() ? (c.exs || c.ex) : c.ex) + '</span>' : '') + '</span><button class="btn small danger" data-a="custdel" data-v="' + c.id + '">' + t('del') + '</button></div>').join('');
-  const imgs = IMGS().map((i) => '<label><img src="' + esc(i.src) + '" alt=""><span><input type="checkbox" data-a="img" data-v="' + i.id + '"' + (S.imgsOff.includes(i.id) ? '' : ' checked') + '>' + esc(SC() ? i.name.sc : i.name.tc) + '</span></label>').join('');
+  const imgs = (window.SD_IMAGES || []).map((i) => '<label><img src="' + esc(i.src) + '" alt=""><span><input type="checkbox" data-a="img" data-v="' + i.id + '"' + (S.imgsOff.includes(i.id) ? '' : ' checked') + '>' + esc(SC() ? i.name.sc : i.name.tc) + '</span></label>').join('');
   return     '<div class="sec"><h2>' + t('setCustom') + '</h2><div class="row"><input type="text" id="cTitle" placeholder="' + esc(t('cTitle')) + '" style="flex:1;min-width:200px"><input type="text" id="cEx" placeholder="' + esc(t('cEx')) + '" style="flex:1;min-width:200px"><button class="btn primary" data-a="custadd">' + t('add') + '</button></div>' + customs + '</div>' +
+    userImgsHtml() +
     '<div class="sec"><h2>' + t('setImgs') + '</h2><div class="imgs">' + imgs + '</div></div>' +
     '<div class="sec"><h2>' + t('setOther') + '</h2><label class="row"><input type="checkbox" data-a="norepeat"' + (S.noRepeat ? ' checked' : '') + '> ' + t('noRepeat') + '</label></div>';
 }
@@ -504,10 +617,10 @@ function renderStudent() {
   if (!d || (!d.img && !d.story)) {
     body = '<div class="cards">' + '<div class="card img"><div class="lab">' + t('lblImg') + '</div><div class="empty">' + t('waitS') + '</div></div>' + gramCard(null, 'waitS') + '</div>';
   } else if (d.mode === 'story') {
-    body = '<div class="cards">' + imgCard(d.img) + '<div class="story"><div class="lab">' + t('storyLab') + '</div><div class="s">' + esc(d.story ? (SC() ? d.story.sc : d.story.tc) : '—') + '</div><div class="ask">' + t('askStory') + '</div></div></div>';
+    body = '<div class="cards">' + imgCard(d.img, d) + '<div class="story"><div class="lab">' + t('storyLab') + '</div><div class="s">' + esc(d.story ? (SC() ? d.story.sc : d.story.tc) : '—') + '</div><div class="ask">' + t('askStory') + '</div></div></div>';
   } else {
     const g = d.g ? { title: SC() ? d.g.sc : d.g.tc, tag: d.g.custom ? t('custom') : (d.g.b ? t('book') + d.g.b + t('bookUnit') + '・' + (d.g.lv || '') + '・' + t('book') + d.g.l + t('lesson') : '') } : null;
-    body = '<div class="cards">' + imgCard(d.img) + gramCard(g, d.img ? 'noG' : 'waitS') + '</div><p class="note" style="text-align:center;margin-top:12px;font-size:15px">' + t(d.g ? 'askSentence' : 'askImg') + '</p>';
+    body = '<div class="cards">' + imgCard(d.img, d) + gramCard(g, d.img ? 'noG' : 'waitS') + '</div><p class="note" style="text-align:center;margin-top:12px;font-size:15px">' + t(d.g ? 'askSentence' : 'askImg') + '</p>';
   }
   app.innerHTML = top + (d && (d.img || d.story) ? timerBox() : '') + body;
   startLocalClock();
@@ -540,8 +653,9 @@ function tmSet(tm) {
 
 /* ================= 老師動作 ================= */
 function roomDoc() {
+  const um = cur.img && String(cur.img).startsWith('u_') ? UIMGS.find((i) => i.id === cur.img) : null;
   return {
-    mode: cur.mode, img: cur.img || null,
+    mode: cur.mode, img: cur.img || null, ia: um ? um.src : null, inm: um ? { tc: um.name.tc, sc: um.name.sc } : null,
     g: cur.g ? { tc: cur.g.tc, sc: cur.g.sc, b: cur.g.tagB || 0, l: cur.g.tagL || 0, lv: cur.g.tagB ? levelOf(cur.g.tagB) : '', custom: !!cur.g.custom } : null,
     story: cur.story || null, tm: cur.tm || null, seq: cur.seq,
   };
@@ -640,6 +754,7 @@ function tmCmd(what, quiet) {
 
 async function openRoom() {
   if (roomBusy || room) return;
+  if (!LOCAL && !owner) { roomBusy = true; render(); const ok = await ownerLogin(); roomBusy = false; if (!ok) { render(); return; } }
   roomBusy = true; render();
   try { const code = await Sync.create(roomDoc()); room = { code }; }
   catch (e) { toast(t('connFail')); console.error(e); }
@@ -687,6 +802,8 @@ document.addEventListener('click', async (e) => {
     case 'tmpause': tmCmd('pause'); break;
     case 'tmrestart': tmCmd('restart'); break;
     case 'timerstop': tmCmd('stop'); break;
+    case 'ologin': { if (await ownerLogin()) render(); break; }
+    case 'ologout': ownerLogout(); break;
     case 'openroom': openRoom(); break;
     case 'endroom': endRoom(); break;
     case 'copylink': try { await navigator.clipboard.writeText(el.dataset.url); toast(t('copied')); } catch (er) { prompt('', el.dataset.url); } break;
@@ -711,6 +828,7 @@ document.addEventListener('click', async (e) => {
       const T2 = both(ti), E2 = ex ? both(ex) : null;
       S.customs.push({ id: 'c' + Date.now(), tc: T2.tc, sc: T2.sc, ex: E2 ? E2.tc : '', exs: E2 ? E2.sc : '', on: true }); saveS(); render(); break;
     }
+    case 'udel': { if (confirm(t('del') + '？')) { UIMGS = UIMGS.filter((i) => i.id !== v); S.imgsOff = S.imgsOff.filter((x) => x !== v); saveS(); await idbDo('readwrite', (st) => st.delete(v)); render(); } break; }
     case 'custdel': S.customs = S.customs.filter((c) => c.id !== v); saveS(); render(); break;
   }
 });
@@ -728,10 +846,13 @@ function keepOpenRender() {
   if ($('#plSearch')) { $('#plSearch').value = q; applyPlistFilter(); }
 }
 document.addEventListener('change', (e) => {
+  if (e.target.id === 'uFile') { const fs = Array.from(e.target.files || []); e.target.value = ''; addUserImgs(fs); return; }
   const el = e.target; const a = el.dataset && el.dataset.a; if (!a) return;
   if (a === 'pt') { const id = el.dataset.v; S.excluded = el.checked ? S.excluded.filter((x) => x !== id) : S.excluded.concat(id); saveS(); updateRange(); }
   else if (a === 'custon') { const c = S.customs.find((x) => x.id === el.dataset.v); if (c) { c.on = el.checked; saveS(); updateRange(); } }
   else if (a === 'img') { const id = el.dataset.v; S.imgsOff = el.checked ? S.imgsOff.filter((x) => x !== id) : S.imgsOff.concat(id); saveS(); updateRange(); }
+  else if (a === 'uname') { const r = UIMGS.find((i) => i.id === el.closest('.uimg').dataset.id); if (r) { r.name = both(el.value.trim().slice(0, 20) || t('uDefName')); idbDo('readwrite', (st) => st.put(r)); } }
+  else if (a === 'uwords') { const r = UIMGS.find((i) => i.id === el.closest('.uimg').dataset.id); if (r) { r.words = el.value.split(/[、,，\s]+/).map((w) => w.trim()).filter(Boolean).slice(0, 12).map(both); idbDo('readwrite', (st) => st.put(r)); } }
   else if (a === 'norepeat') { S.noRepeat = el.checked; saveS(); }
   else if (a === 'timersel') { S.timerSel = el.value; saveS(); }
   else if (a === 'tmauto') { S.autoTimer = el.checked; saveS(); }
