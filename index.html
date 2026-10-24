@@ -40,6 +40,35 @@ button{font:inherit;color:inherit;cursor:pointer}
 .home .join .btn{display:block;width:auto;flex:none;margin:0;padding:10px 26px}
 .join input{flex:1 1 auto;width:100%;font-size:26px;letter-spacing:.3em;text-align:center;border:1.5px solid var(--line);border-radius:6px;background:#fffdf7;padding:10px;min-width:0}
 .err{color:var(--warn);min-height:22px;margin-top:8px;font-size:14px}
+/* 手機版（老師）：精簡成一眼看到語法點和圖片 */
+.moreb{display:none}
+@media(max-width:720px){
+  .ttop{gap:5px}.ttop .brand{display:none}
+  .ttop .chip,.ttop .btn.small{padding:5px 8px;font-size:13px}
+  .ttop .roomin{gap:5px}
+  .tabs{flex-wrap:nowrap;gap:5px;margin-bottom:8px}
+  .tabs .chip{flex:1;padding:8px 2px;font-size:14px;white-space:nowrap}
+  .wrap{padding-top:10px}
+  .ctl{gap:6px;margin-bottom:8px}
+  .ctl .draw{font-size:16px;letter-spacing:.1em;padding:7px 12px}
+  .ctl .drawrow{gap:6px;flex-wrap:nowrap}
+  .ctl .drawrow .btn{padding:8px 8px;font-size:14px;white-space:nowrap}
+  .ctl:not(.more) .stu .vsep{display:none}
+  .ctl:not(.more) .tmpanel .btn,.ctl:not(.more) .stu .btn{padding:5px 8px;font-size:13px}
+  .ctl:not(.more) .tmpanel .timer{font-size:20px;padding:0 6px}
+  .moreb{display:inline-block}
+  .ctl:not(.more) .tmpanel .row>*:not(.btn):not(.timer){display:none}
+  .ctl:not(.more) .stu .row>*{display:none}
+  .ctl:not(.more) .stu .row>.keep,.ctl:not(.more) .stu .row>.chip.on{display:inline-block}
+  .ctl .tmpanel,.ctl .stu{padding:4px 5px}
+  .ctl.more .stu,.ctl.more .tmpanel{flex:1 1 100%}
+  .cards{gap:8px}
+  .cards .card.gram{order:-1;min-height:0}
+  .card.gram .body{padding:10px 12px 14px;gap:6px}
+  .gtitle{font-size:clamp(22px,6.4vw,30px)}
+  .card .lab{padding-top:6px}
+  .card.img img{margin-top:6px}
+}
 /* 卡片 */
 .cards{display:grid;grid-template-columns:1.25fr 1fr;gap:12px}
 @media(max-width:720px){.cards{grid-template-columns:1fr}}
@@ -566,7 +595,7 @@ function renderTeacher() {
   const openBk = Array.from(document.querySelectorAll('details.bk')).map((d) => d.open);
   const q0 = ($('#plSearch') || {}).value || '';
   app.innerHTML =
-    '<div class="top"><span class="brand">' + t('title') + '</span><span style="flex:1"></span>' + roomBar() + langBtn() + '<button class="chip" data-a="home">' + t('back') + '</button></div>' +
+    '<div class="top ttop"><span class="brand">' + t('title') + '</span><span style="flex:1"></span>' + roomBar() + langBtn() + '<button class="chip" data-a="home">' + t('back') + '</button></div>' +
     '<div class="tabs">' + tabs + '</div>' + body;
   if (tab === 'story') { const ta = $('#storyIn'); if (ta) ta.value = storyDraft; }
   document.querySelectorAll('details.bk').forEach((d, i) => { d.open = !!openBk[i]; });
@@ -579,8 +608,9 @@ function renderTeacher() {
 function teacherSentence() {
   const g = cur.mode === 'sentence' ? curG() : null;
   const img = cur.mode === 'sentence' ? cur.img : null;
-  return '<div class="ctl"><div class="drawrow"><button class="draw" data-a="draw"' + (rolling ? ' disabled' : '') + '>' + (rolling ? t('drawing') : t('draw')) + '</button>' +
+  return '<div class="ctl' + (ctlMore ? ' more' : '') + '"><div class="drawrow"><button class="draw" data-a="draw"' + (rolling ? ' disabled' : '') + '>' + (rolling ? t('drawing') : t('draw')) + '</button>' +
     '<button class="btn" data-a="drawimg"' + (rolling ? ' disabled' : '') + '>' + t('drawImg') + '</button>' +
+    '<button class="btn moreb' + (ctlMore ? ' primary' : '') + '" data-a="ctlmore">⋯</button>' +
     '</div>' + stuRow() +
     timerPanel() + '</div>' +
     '<div class="cards' + (rolling ? ' rolling' : '') + '" id="cards">' + (img ? imgCard(img) : '<div class="card img"><div class="lab">' + t('lblImg') + '</div><div class="empty">' + t('waitT') + '</div></div>') + gramCard(g, img ? 'noG' : 'waitT') + '</div>' +
@@ -594,10 +624,11 @@ function stuRow() {
 }
 function stuName(id) { const x = S.stus.find((y) => y.id === id); return x ? x.n : ''; }
 let marked = null;
+let ctlMore = false;
 function errMini() {
   const can = cur.mode === 'sentence' && cur.g && !rolling;
   const on = can && S.stu && marked === cur.seq + ':' + S.stu;
-  return '<span class="vsep"></span><button class="btn small' + (on ? ' primary' : '') + '" data-a="errmark"' + (can ? '' : ' disabled') + ' title="' + esc(t('errMark')) + '">' + (on ? t('errShortOn') : t('errShort')) + '</button>';
+  return '<span class="vsep"></span><button class="btn small keep' + (on ? ' primary' : '') + '" data-a="errmark"' + (can ? '' : ' disabled') + ' title="' + esc(t('errMark')) + '">' + (on ? t('errShortOn') : t('errShort')) + '</button>';
 }
 function errBtn() {
   const on = marked === cur.seq + ':' + S.stu && S.stu;
@@ -971,6 +1002,7 @@ document.addEventListener('click', async (e) => {
     case 'tab': if (tab === 'story') storyText(); tab = v; render(); break;
     case 'draw': drawSentence(); break;
     case 'drawimg': drawSentence(true); break;
+    case 'ctlmore': ctlMore = !ctlMore; render(); break;
     case 'togglehints': S.showHints = !S.showHints; saveS(); render(); break;
     case 'storygo': storyGo(false); break;
     case 'storyimg': storyGo(true); break;
