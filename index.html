@@ -533,8 +533,7 @@ function grammarList() {
       '<span style="margin-left:auto"></span><button class="btn small" data-a="bookall" data-v="' + b + '">' + t('allOn') + '</button><button class="btn small" data-a="booknone" data-v="' + b + '">' + t('allOff') + '</button></summary>' +
       '<div class="plist">' + list.map((p) => '<div class="pi" data-q="' + esc((p.t + ' ' + p.ts + ' ' + p.id).toLowerCase()) + '"><input type="checkbox" data-a="pt" data-v="' + p.id + '"' + (ex.has(p.id) ? '' : ' checked') + '><span class="id">' + p.id + '</span><span class="pf" data-a="force" data-v="' + p.id + '" title="' + esc(t('forceTip')) + '">' + esc(SC() ? p.ts : p.t) + '</span></div>').join('') + '</div></details>';
   }).join('');
-  return '<div class="sec"><h2>' + t('setFine') + '</h2><div class="row" style="margin-bottom:6px"><input type="text" id="plSearch" placeholder="' + esc(t('search')) + '" style="flex:1"></div>' + fine + '</div>' +
-    customSec(true) +
+  return '<div class="sec"><h2>' + t('setFine') + '</h2><div class="row" style="margin-bottom:6px"><input type="text" id="plSearch" placeholder="' + esc(t('search')) + '" style="flex:1"></div>' + fine + customGroup() + '</div>' +
     '<p class="note" style="text-align:center;margin:14px 0 4px">' + t('srcNote').replace('{r}', shownRange()).replace('{n}', SHOWN().length) + '</p>';
 }
 
@@ -597,6 +596,12 @@ function userImgsHtml() {
   return '<div class="sec"><h2>' + t('setMine') + ' <span class="note">' + UIMGS.length + '/' + UMAX + '</span></h2>' +
     '<div class="row"><label class="btn primary" for="uFile">' + t('uAdd') + '</label><input type="file" id="uFile" accept="image/*" multiple hidden></div>' +
     '<p class="note" style="margin:8px 0">' + t('uNote') + '</p>' + (rows ? '<div class="ulist">' + rows + '</div>' : '') + '</div>';
+}
+function customGroup() {
+  const n = S.customs.filter((c) => c.on).length;
+  const rows = S.customs.map((c) => '<div class="cust"><input type="checkbox" data-a="custon" data-v="' + c.id + '"' + (c.on ? ' checked' : '') + '><span class="t pf" data-a="force" data-v="' + c.id + '" title="' + esc(t('forceTip')) + '">' + esc(SC() ? c.sc : c.tc) + (c.ex ? '<br><span class="note">' + esc(SC() ? (c.exs || c.ex) : c.ex) + '</span>' : '') + '</span><button class="btn small danger" data-a="custdel" data-v="' + c.id + '">' + t('del') + '</button></div>').join('');
+  return '<details class="bk"><summary>' + t('setCustom') + '　<span class="note">' + n + '/' + S.customs.length + '</span></summary>' +
+    '<div class="row" style="margin:8px 0"><input type="text" id="cTitle" placeholder="' + esc(t('cTitle')) + '" style="flex:1;min-width:200px"><input type="text" id="cEx" placeholder="' + esc(t('cEx')) + '" style="flex:1;min-width:200px"><button class="btn primary" data-a="custadd">' + t('add') + '</button></div>' + rows + '</details>';
 }
 function customSec(forceable) {
   const customs = S.customs.map((c) => '<div class="cust"><input type="checkbox" data-a="custon" data-v="' + c.id + '"' + (c.on ? ' checked' : '') + '><span class="t"' + (forceable ? ' data-a="force" data-v="' + c.id + '" style="cursor:pointer" title="' + esc(t('forceTip')) + '"' : '') + '>' + esc(SC() ? c.sc : c.tc) + (c.ex ? '<br><span class="note">' + esc(SC() ? (c.exs || c.ex) : c.ex) + '</span>' : '') + '</span><button class="btn small danger" data-a="custdel" data-v="' + c.id + '">' + t('del') + '</button></div>').join('');
