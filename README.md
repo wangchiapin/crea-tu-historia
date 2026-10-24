@@ -62,5 +62,5 @@
 | `grammar-b12.js` / `grammar-b36.js` | 語法點精簡資料：第 1–2 冊（所有老師）／第 3–6 冊（授權老師登入後才載入） |
 | `grammar-ex.js` | 教材例句（只有授權老師登入後才載入；公開版的語法點只有名稱） |
 | `hints.js` / `hints-b36.js` | 老師專用例句建議，同樣分兩份 |
-| `images/*.svg` | 60 張圖片卡（`tools/img/` 是畫圖的程式） |
+| `images/*.svg` | 100 張圖片卡（`tools/img/` 是畫圖的程式） |
 | `firestore-rules-sentence_rooms.txt` | 連線房間的 Firestore 規則 |
