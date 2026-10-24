@@ -37,7 +37,8 @@ button{font:inherit;color:inherit;cursor:pointer}
 .home p{color:var(--mute);margin:0 0 28px}
 .home .btn{display:block;width:100%;padding:16px;font-size:18px;margin-bottom:12px}
 .join{display:flex;gap:8px;margin-top:6px}
-.join input{flex:1;font-size:26px;letter-spacing:.3em;text-align:center;border:1.5px solid var(--line);border-radius:6px;background:#fffdf7;padding:10px;min-width:0}
+.home .join .btn{display:block;width:auto;flex:none;margin:0;padding:10px 26px}
+.join input{flex:1 1 auto;width:100%;font-size:26px;letter-spacing:.3em;text-align:center;border:1.5px solid var(--line);border-radius:6px;background:#fffdf7;padding:10px;min-width:0}
 .err{color:var(--warn);min-height:22px;margin-top:8px;font-size:14px}
 /* 卡片 */
 .cards{display:grid;grid-template-columns:1.25fr 1fr;gap:12px}
@@ -981,7 +982,7 @@ document.addEventListener('keydown', (e) => {
 window.addEventListener('beforeunload', () => { if (room && !LOCAL) { /* 房間 6 小時後會自動過期 */ } });
 
 loadOpenCC();
-render();
+{ const m = location.search.match(/[?&]room=(\d{4})/); if (m) joinRoom(m[1]); else render(); }   /* 學生點老師給的連結，直接進房間 */
 </script>
 </body>
 </html>
