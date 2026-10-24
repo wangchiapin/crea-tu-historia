@@ -119,7 +119,7 @@ details.bk>summary{padding:8px 10px;cursor:pointer;font-weight:600;display:flex;
 @keyframes tmblink{50%{transform:scale(1.04);filter:brightness(1.25)}}
 .tmpanel .row{align-items:center}
 .tmpanel label{display:inline-flex;gap:6px;align-items:center;cursor:pointer}
-.story{background:var(--panel);border:2px solid var(--line);border-radius:8px;padding:16px;text-align:center}
+.story{background:var(--panel);border:2px solid var(--line);border-radius:8px;padding:16px;text-align:center;display:flex;flex-direction:column;justify-content:center;align-items:center}
 .story .lab{font-size:12px;letter-spacing:.14em;color:var(--mute);margin-bottom:6px}
 .story .s{font-size:clamp(24px,5vw,38px);font-weight:700;line-height:1.4}
 .annchk{display:inline-flex;gap:12px;align-items:center;flex-wrap:wrap;margin-left:8px}
@@ -694,7 +694,7 @@ function teacherStory() {
   return '<div class="sec"><h2>' + t('storyIn') + '</h2><textarea id="storyIn" placeholder="' + esc(t('storyPh')) + '"></textarea>' +
     '<div class="row" style="margin-top:8px"><button class="btn primary" data-a="storygo">' + t('storyGo') + '</button><button class="btn" data-a="storyimg">' + t('storyImg') + '</button>' + annChecks() +
     '</div></div>' + (isStory ? timerPanel() : '') +
-    (isStory && cur.img ? '<div class="cards">' + imgCard(cur.img) + '<div class="story"><div class="lab">' + t('storyLab') + '</div><div class="s">' + esc(show ? (SC() ? cur.story.sc : cur.story.tc) : '—') + '</div>' + (show ? annHtml(cur.story) : '') + '<div class="ask">' + t('askStory') + '</div></div></div>' : '') +
+    (isStory && cur.img ? '<div class="cards">' + imgCard(cur.img) + '<div class="story">' + (show ? '' : '<div class="lab">' + t('storyLab') + '</div>') + '<div class="s">' + esc(show ? (SC() ? cur.story.sc : cur.story.tc) : '—') + '</div>' + (show ? annHtml(cur.story) : '<div class="ask">' + t('askStory') + '</div>') + '</div></div>' : '') +
     (isStory ? hintsHtml() : '');
 }
 
@@ -785,7 +785,7 @@ function renderStudent() {
   if (!d || (!d.img && !d.story)) {
     body = '<div class="cards">' + '<div class="card img"><div class="lab">' + t('lblImg') + '</div><div class="empty">' + t('waitS') + '</div></div>' + gramCard(null, 'waitS') + '</div>';
   } else if (d.mode === 'story') {
-    body = '<div class="cards">' + imgCard(d.img, d) + '<div class="story"><div class="lab">' + t('storyLab') + '</div><div class="s">' + esc(d.story ? (SC() ? d.story.sc : d.story.tc) : '—') + '</div>' + (d.story ? annHtml(d.story) : '') + '<div class="ask">' + t('askStory') + '</div></div></div>';
+    body = '<div class="cards">' + imgCard(d.img, d) + '<div class="story">' + (d.story ? '' : '<div class="lab">' + t('storyLab') + '</div>') + '<div class="s">' + esc(d.story ? (SC() ? d.story.sc : d.story.tc) : '—') + '</div>' + (d.story ? annHtml(d.story) : '<div class="ask">' + t('askStory') + '</div>') + '</div></div>';
   } else {
     const g = d.g ? { title: SC() ? d.g.sc : d.g.tc, tag: d.g.custom ? t('custom') : (d.g.b ? t('book') + d.g.b + t('bookUnit') + '・' + (d.g.lv || '') + '・' + t('book') + d.g.l + t('lesson') : '') } : null;
     body = '<div class="cards">' + imgCard(d.img, d) + gramCard(g, d.img ? 'noG' : 'waitS') + '</div><p class="note" style="text-align:center;margin-top:12px;font-size:15px">' + t(d.g ? 'askSentence' : 'askImg') + '</p>';
