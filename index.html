@@ -151,9 +151,10 @@ const T = {
   loggingIn: ['登入中…（如果跳出視窗被擋，請允許彈出視窗）', '登录中…（如果弹出窗口被拦截，请允许弹出窗口）'],
   loginFail: ['登入沒有完成，請再試一次', '登录没有完成，请再试一次'],
   notOwner: ['連線功能僅限授權老師使用。單機版可以照常使用。', '连线功能仅限授权老师使用。单机版可以照常使用。'],
-  fullLogin: ['授權老師登入', '授权老师登录'], fullOn: ['✓ 完整版', '✓ 完整版'], logout: ['登出', '登出'], offline: ['單機版', '单机版'],
+  fullLogin: ['登入', '登录'], fullOn: ['✓ 完整版', '✓ 完整版'], logout: ['登出', '登出'], offline: ['單機版', '单机版'],
   connFail: ['連線失敗，請檢查網路後再試', '连线失败，请检查网络后再试'],
   tabS: ['造句抽選', '造句抽选'], tabStory: ['編故事', '编故事'], tabSet: ['設定', '设置'], tabErr: ['常錯語法', '常错语法'],
+  errSearch: ['搜尋學生姓名…', '搜索学生姓名…'], stuMgr: ['學生管理', '学生管理'],
   stuLab: ['學生', '学生'], stuPh: ['輸入學生姓名', '输入学生姓名'], stuAdd: ['加入', '加入'], stuNone: ['（先加入學生姓名，才能記錄用錯的語法）', '（先加入学生姓名，才能记录用错的语法）'],
   errShort: ['✗ 用錯了', '✗ 用错了'], errShortOn: ['✓ 已記・取消', '✓ 已记・取消'],
   errMark: ['✗ 用錯了，記到常錯語法', '✗ 用错了，记到常错语法'], errDone: ['✓ 已記到', '✓ 已记到'], errUndo: ['（再按一次取消）', '（再按一次取消）'], pickStu: ['請先點選上方的學生姓名', '请先点选上方的学生姓名'],
@@ -212,7 +213,7 @@ const t = (k) => (T[k] ? T[k][SC()] : k);
 const DEF = { lang: 'tc', books: [1], excluded: [], customs: [], imgsOff: [], showHints: true, storyTimer: 120, timerSel: 'd120', autoTimer: false, noRepeat: true, stus: [], stu: null, errs: {} };
 function loadS() { try { return Object.assign({}, DEF, JSON.parse(localStorage.getItem(LS_KEY) || '{}')); } catch (e) { return Object.assign({}, DEF); } }
 let S = loadS();
-function saveS() { try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) {} }
+function saveS() { S.ts = Date.now(); try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) {} if (typeof cloudSoon === 'function') cloudSoon(); }
 
 /* ================= 轉繁簡（自訂語法點／故事句子用） ================= */
 let conv = { toTW: (x) => x, toCN: (x) => x };
@@ -238,7 +239,8 @@ function fb() {
     const F = await import(CDN + 'firebase-firestore.js');
     const app = A.initializeApp(FB.cfg, 'sentencedraw');
     const auth = Au.getAuth(app);
-    if (!auth.currentUser) await Au.signInAnonymously(auth); else await auth.authStateReady();
+    await auth.authStateReady();   /* 先等瀏覽器還原上次的登入（授權老師的 Google 登入），不然會被匿名登入蓋掉 */
+    if (!auth.currentUser) await Au.signInAnonymously(auth);
     return { F, Au, auth, db: F.getFirestore(app) };
   })().catch((e) => { fbp = null; throw e; });
   return fbp;
@@ -310,10 +312,10 @@ async function ensureTeacherData() {
   await Promise.all([loadScript('grammar-b12.js'), loadScript('hints.js')]);
   window.SD_RULEX = (window.SD_RULES || []).map((r) => ({ re: new RegExp(r.re), s: r.s }));
   teacherDataReady = true;
-  loadUserImgs().then(() => { if (role === 'teacher' && UIMGS.length) render(); });
+  const imgsLoaded = loadUserImgs().then(() => { if (role === 'teacher' && UIMGS.length) render(); });
   if (LOCAL) await loadOwnerData();
   else if (lsGet('sd_owner') !== '1') fb().catch(() => {});   /* 先連好，登入視窗才不會因為等太久被瀏覽器擋掉 */
-  else if (lsGet('sd_owner') === '1') verifyOwner().then((ok) => { if (ok && role === 'teacher') render(); });
+  else imgsLoaded.then(() => verifyOwner()).then((ok) => { if (ok && role === 'teacher') render(); });
 }
 /* ---- 授權老師（只有你的 Gmail）：登入後才載入第 3–6 冊語法點和例句，並且才能開連線 ---- */
 let owner = false;
@@ -329,6 +331,73 @@ async function loadOwnerData() {
   window.SD_RULEX = window.SD_RULEX.concat((window.SD_RULES_MORE || []).map((r) => ({ re: new RegExp(r.re), s: r.s })));
   owner = true;
 }
+/* ---- 授權老師雲端同步：設定、學生、常錯紀錄、自訂語法點、自己上傳的圖片，登入後存在你的 Firebase（只有你的 Gmail 讀得到） ---- */
+const CLOUD = 'sentence_owner_data';
+const SYNC_KEYS = ['lang', 'books', 'excluded', 'customs', 'imgsOff', 'showHints', 'storyTimer', 'timerSel', 'autoTimer', 'noRepeat', 'stus', 'stu', 'errs', 'rangeInit', 'rangeBooks'];
+let cloudOK = false, cloudTm = null;
+function cloudSoon() { if (!cloudOK) return; clearTimeout(cloudTm); cloudTm = setTimeout(cloudPush, 1500); }
+async function cloudPush() {
+  try {
+    const { F, db } = await fb(); const o = {}; SYNC_KEYS.forEach((k) => { o[k] = S[k]; });
+    await F.setDoc(F.doc(db, CLOUD, 'settings'), { ts: S.ts || Date.now(), data: JSON.stringify(o) });
+  } catch (e) { console.error('cloudPush', e); }
+}
+async function cloudInit() {
+  if (LOCAL) return;
+  try {
+    const { F, db } = await fb();
+    const snap = await F.getDoc(F.doc(db, CLOUD, 'settings'));
+    if (snap.exists() && (lsGet('sd_cloud') !== '1' || (snap.data().ts || 0) > (S.ts || 0))) {   /* 這台第一次連雲端：以雲端為準 */
+      Object.assign(S, JSON.parse(snap.data().data)); S.ts = snap.data().ts;
+      try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) {}
+      cloudOK = true;
+    } else { cloudOK = true; await cloudPush(); }
+    lsSet('sd_cloud', '1');
+    await syncImgs();
+  } catch (e) { console.error('cloudInit', e); }
+}
+async function syncImgs() {
+  const { F, db } = await fb();
+  const idxRef = F.doc(db, CLOUD, 'imgidx');
+  const snap = await F.getDoc(idxRef);
+  let remote = snap.exists() ? (snap.data().ids || []) : [];
+  let known = []; try { known = JSON.parse(lsGet('sd_imgsynced') || '[]'); } catch (e) {}
+  let changed = false;
+  /* 別的電腦刪掉的圖，這台也刪 */
+  for (const i of UIMGS.filter((x) => known.includes(x.id) && !remote.includes(x.id))) { await idbDo('readwrite', (st) => st.delete(i.id)); UIMGS = UIMGS.filter((x) => x.id !== i.id); }
+  /* 這台有、雲端沒有的，上傳 */
+  for (const i of UIMGS.filter((x) => !remote.includes(x.id))) { await F.setDoc(F.doc(db, CLOUD, 'img_' + i.id), i); remote.push(i.id); changed = true; }
+  /* 雲端有、這台沒有的，下載 */
+  for (const id of remote.filter((x) => !UIMGS.some((u) => u.id === x))) {
+    const d = await F.getDoc(F.doc(db, CLOUD, 'img_' + id));
+    if (d.exists()) { const r = d.data(); await idbDo('readwrite', (st) => st.put(r)); UIMGS.push(r); }
+  }
+  UIMGS.sort((a, b) => a.t - b.t);
+  if (changed) await F.setDoc(idxRef, { ids: remote });
+  lsSet('sd_imgsynced', JSON.stringify(remote));
+}
+async function cloudImgPut(rec) {
+  if (!cloudOK || LOCAL) return;
+  try {
+    const { F, db } = await fb();
+    await F.setDoc(F.doc(db, CLOUD, 'img_' + rec.id), rec);
+    const ref = F.doc(db, CLOUD, 'imgidx'); const sn = await F.getDoc(ref); const ids = sn.exists() ? (sn.data().ids || []) : [];
+    if (!ids.includes(rec.id)) { ids.push(rec.id); await F.setDoc(ref, { ids }); }
+    let known = []; try { known = JSON.parse(lsGet('sd_imgsynced') || '[]'); } catch (e) {}
+    if (!known.includes(rec.id)) lsSet('sd_imgsynced', JSON.stringify(known.concat(rec.id)));
+  } catch (e) { console.error('cloudImgPut', e); }
+}
+async function cloudImgDel(id) {
+  if (!cloudOK || LOCAL) return;
+  try {
+    const { F, db } = await fb();
+    await F.deleteDoc(F.doc(db, CLOUD, 'img_' + id));
+    const ref = F.doc(db, CLOUD, 'imgidx'); const sn = await F.getDoc(ref);
+    await F.setDoc(ref, { ids: (sn.exists() ? (sn.data().ids || []) : []).filter((x) => x !== id) });
+    let known = []; try { known = JSON.parse(lsGet('sd_imgsynced') || '[]'); } catch (e) {}
+    lsSet('sd_imgsynced', JSON.stringify(known.filter((x) => x !== id)));
+  } catch (e) { console.error('cloudImgDel', e); }
+}
 async function checkOwner() {
   try { const { F, db } = await fb(); await F.getDoc(F.doc(db, 'sentence_owner', 'me')); return true; } catch (e) { checkOwner.err = e.code || e.message || ''; return false; }
 }
@@ -337,7 +406,7 @@ async function verifyOwner() {
     const { auth } = await fb(); await auth.authStateReady();
     if (!auth.currentUser || auth.currentUser.isAnonymous) { lsSet('sd_owner', null); return false; }
     if (!(await checkOwner())) { lsSet('sd_owner', null); return false; }
-    await loadOwnerData(); return true;
+    await loadOwnerData(); await cloudInit(); return true;
   } catch (e) { return false; }
 }
 async function ownerLogin() {
@@ -347,9 +416,10 @@ async function ownerLogin() {
   try { await x.auth.authStateReady(); if (!x.auth.currentUser || x.auth.currentUser.isAnonymous) await x.Au.signInWithPopup(x.auth, new x.Au.GoogleAuthProvider()); }
   catch (e) { toast(t('loginFail') + '（' + (e.code || e.message || e) + '）', 8000); console.error(e); return false; }
   if (!(await checkOwner())) { try { await x.Au.signOut(x.auth); } catch (e) {} lsSet('sd_owner', null); toast(t('notOwner') + '（' + (checkOwner.err || '') + '）', 8000); return false; }
-  lsSet('sd_owner', '1'); await loadOwnerData(); return true;
+  lsSet('sd_owner', '1'); await loadOwnerData(); await cloudInit(); return true;
 }
 async function ownerLogout() {
+  cloudOK = false;
   try { const x = await fb(); await x.Au.signOut(x.auth); } catch (e) {}
   lsSet('sd_owner', null); location.reload();
 }
@@ -450,7 +520,7 @@ function roomBar() {
       '<button class="btn small" data-a="copylink" data-url="' + esc(url) + '" title="' + esc(t('roomHelp')) + '">' + t('copyLink') + '</button><button class="btn small danger" data-a="endroom">' + t('endRoom') + '</button></span>';
   }
   const acct = LOCAL ? '' : (owner ? '<span class="pill live">' + t('fullOn') + '</span><button class="btn small" data-a="ologout">' + t('logout') + '</button>' : '<button class="btn small" data-a="ologin">' + t('fullLogin') + '</button>');
-  return '<span class="roomin"><span class="pill" title="' + esc(t('netOffer')) + '">' + t('online') + '</span>' + (roomBusy ? '<span class="note">' + t('creating') + '</span>' : '') + acct + '<button class="btn small primary" data-a="openroom"' + (roomBusy ? ' disabled' : '') + '>' + t('openRoom') + '</button></span>';
+  return '<span class="roomin">' + acct + '<span class="pill" title="' + esc(t('netOffer')) + '">' + t('online') + '</span>' + (roomBusy ? '<span class="note">' + t('creating') + '</span>' : '') + '<button class="btn small primary" data-a="openroom"' + (roomBusy ? ' disabled' : '') + '>' + t('openRoom') + '</button></span>';
 }
 function curG() { return cur.g ? { title: gText(cur.g), tag: gTag(cur.g) } : null; }
 
@@ -495,6 +565,7 @@ function renderTeacher() {
   document.querySelectorAll('details.bk').forEach((d, i) => { d.open = !!openBk[i]; });
   if ($('#plSearch')) $('#plSearch').value = q0;
   if (tab === 'sentence') applyPlistFilter();
+  if (tab === 'err' && $('#errSearch')) { $('#errSearch').value = errQ; applyErrFilter(); }
   startLocalClock();
 }
 
@@ -531,13 +602,15 @@ function errAdd(stu, g, d) {
   r.n += d; if (r.n <= 0) delete e[g.id];
   saveS();
 }
+let errQ = '';
 function teacherErrs() {
   const blocks = S.stus.map((x) => {
     const rows = Object.keys(S.errs[x.id] || {}).map((gid) => Object.assign({ gid }, S.errs[x.id][gid])).sort((a, b) => b.n - a.n);
-    return '<div class="sec"><h2 style="display:flex;align-items:center;gap:8px">' + esc(x.n) + '<span class="note">' + rows.length + '</span><span style="margin-left:auto"></span><button class="btn small danger" data-a="studel" data-v="' + x.id + '">' + t('delStu') + '</button></h2>' +
+    return '<div class="sec errblk" data-q="' + esc(x.n.toLowerCase()) + '"><h2 style="display:flex;align-items:center;gap:8px">' + esc(x.n) + '<span class="note">' + rows.length + '</span></h2>' +
       (rows.length ? rows.map((r) => '<div class="errrow"><span class="tt">' + esc(SC() ? r.sc : r.tc) + '</span><span class="n">' + r.n + ' ' + t('errCnt') + '</span><button class="btn small" data-a="errdraw" data-v="' + x.id + '|' + r.gid + '">' + t('errAgain') + '</button><button class="btn small" data-a="errdec" data-v="' + x.id + '|' + r.gid + '">−</button></div>').join('') : '<p class="note" style="margin:6px 0 0">' + t('errEmpty') + '</p>') + '</div>';
   }).join('');
-  return (blocks || '<div class="sec"><p class="note" style="margin:0">' + t('stuNone') + '</p></div>') + '<p class="note" style="text-align:center;margin:14px 0 4px">' + t('errNote') + '</p>';
+  const srch = S.stus.length > 1 ? '<div class="sec" style="padding:8px 12px"><input type="text" id="errSearch" placeholder="' + esc(t('errSearch')) + '" style="width:100%"></div>' : '';
+  return srch + (blocks || '<div class="sec"><p class="note" style="margin:0">' + t('stuNone') + '</p></div>') + '<p class="note" style="text-align:center;margin:14px 0 4px">' + t('errNote') + '</p>';
 }
 function grammarList() {
   pool();
@@ -601,7 +674,7 @@ async function addUserImgs(files) {
       const src = await fileToJpeg(f);
       const nm = both((f.name || '').replace(/\.[^.]+$/, '').slice(0, 20) || t('uDefName'));
       const rec = { id: 'u_' + Date.now().toString(36) + Math.floor(Math.random() * 99), src, name: nm, words: [], t: Date.now() };
-      await idbDo('readwrite', (st) => st.put(rec)); UIMGS.push(rec); n++;
+      await idbDo('readwrite', (st) => st.put(rec)); UIMGS.push(rec); cloudImgPut(rec); n++;
     } catch (e) { toast(t('uFail')); }
   }
   if (n) { toast(t('uOk') + ' ' + n); render(); }
@@ -627,10 +700,15 @@ function customSec(forceable) {
 }
 function teacherSettings() {
   const imgs = (window.SD_IMAGES || []).map((i) => '<label><img src="' + esc(i.src) + '" alt=""><span><input type="checkbox" data-a="img" data-v="' + i.id + '"' + (S.imgsOff.includes(i.id) ? '' : ' checked') + '>' + esc(SC() ? i.name.sc : i.name.tc) + '</span></label>').join('');
-  return     customSec(false) +
+  const stuSec = '<div class="sec"><h2>' + t('stuMgr') + '</h2>' + (S.stus.length ? S.stus.map((x) => '<div class="cust"><span class="t">' + esc(x.n) + '</span><button class="btn small danger" data-a="studel" data-v="' + x.id + '">' + t('delStu') + '</button></div>').join('') : '<p class="note" style="margin:0">' + t('stuNone') + '</p>') + '</div>';
+  return     customSec(false) + stuSec +
     userImgsHtml() +
     '<div class="sec"><h2>' + t('setImgs') + '</h2><div class="imgs">' + imgs + '</div></div>' +
     '<div class="sec"><h2>' + t('setOther') + '</h2><label class="row"><input type="checkbox" data-a="norepeat"' + (S.noRepeat ? ' checked' : '') + '> ' + t('noRepeat') + '</label></div>';
+}
+function applyErrFilter() {
+  const q = (($('#errSearch') || {}).value || '').trim().toLowerCase();
+  document.querySelectorAll('.errblk').forEach((l) => { l.style.display = !q || l.dataset.q.includes(q) ? '' : 'none'; });
 }
 function applyPlistFilter() {
   const q = (($('#plSearch') || {}).value || '').trim().toLowerCase();
@@ -858,7 +936,7 @@ document.addEventListener('click', async (e) => {
       const T2 = both(ti), E2 = ex ? both(ex) : null;
       S.customs.push({ id: 'c' + Date.now(), tc: T2.tc, sc: T2.sc, ex: E2 ? E2.tc : '', exs: E2 ? E2.sc : '', on: true }); saveS(); keepOpenRender(); break;
     }
-    case 'udel': { if (confirm(t('del') + '？')) { UIMGS = UIMGS.filter((i) => i.id !== v); S.imgsOff = S.imgsOff.filter((x) => x !== v); saveS(); await idbDo('readwrite', (st) => st.delete(v)); render(); } break; }
+    case 'udel': { if (confirm(t('del') + '？')) { UIMGS = UIMGS.filter((i) => i.id !== v); S.imgsOff = S.imgsOff.filter((x) => x !== v); saveS(); cloudImgDel(v); await idbDo('readwrite', (st) => st.delete(v)); render(); } break; }
     case 'custdel': S.customs = S.customs.filter((c) => c.id !== v); saveS(); keepOpenRender(); break;
   }
 });
@@ -881,8 +959,8 @@ document.addEventListener('change', (e) => {
   if (a === 'pt') { const id = el.dataset.v; S.excluded = el.checked ? S.excluded.filter((x) => x !== id) : S.excluded.concat(id); saveS(); updateRange(); }
   else if (a === 'custon') { const c = S.customs.find((x) => x.id === el.dataset.v); if (c) { c.on = el.checked; saveS(); updateRange(); } }
   else if (a === 'img') { const id = el.dataset.v; S.imgsOff = el.checked ? S.imgsOff.filter((x) => x !== id) : S.imgsOff.concat(id); saveS(); updateRange(); }
-  else if (a === 'uname') { const r = UIMGS.find((i) => i.id === el.closest('.uimg').dataset.id); if (r) { r.name = both(el.value.trim().slice(0, 20) || t('uDefName')); idbDo('readwrite', (st) => st.put(r)); } }
-  else if (a === 'uwords') { const r = UIMGS.find((i) => i.id === el.closest('.uimg').dataset.id); if (r) { r.words = el.value.split(/[、,，\s]+/).map((w) => w.trim()).filter(Boolean).slice(0, 12).map(both); idbDo('readwrite', (st) => st.put(r)); } }
+  else if (a === 'uname') { const r = UIMGS.find((i) => i.id === el.closest('.uimg').dataset.id); if (r) { r.name = both(el.value.trim().slice(0, 20) || t('uDefName')); idbDo('readwrite', (st) => st.put(r)); cloudImgPut(r); } }
+  else if (a === 'uwords') { const r = UIMGS.find((i) => i.id === el.closest('.uimg').dataset.id); if (r) { r.words = el.value.split(/[、,，\s]+/).map((w) => w.trim()).filter(Boolean).slice(0, 12).map(both); idbDo('readwrite', (st) => st.put(r)); cloudImgPut(r); } }
   else if (a === 'norepeat') { S.noRepeat = el.checked; saveS(); }
   else if (a === 'timersel') { S.timerSel = el.value; saveS(); }
   else if (a === 'tmauto') { S.autoTimer = el.checked; saveS(); }
@@ -892,6 +970,7 @@ function updateRange() {
 }
 document.addEventListener('input', (e) => {
   if (e.target.id === 'plSearch') applyPlistFilter();
+  if (e.target.id === 'errSearch') { errQ = e.target.value; applyErrFilter(); }
   if (e.target.id === 'storyIn') storyDraft = e.target.value;
 });
 document.addEventListener('keydown', (e) => {

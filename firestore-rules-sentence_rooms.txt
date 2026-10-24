@@ -22,6 +22,11 @@
       allow read: if sdOwner();
     }
 
+    // 授權老師的雲端備份：設定、學生、常錯紀錄、自訂語法點（settings）和自己上傳的圖片（img_…），只有授權老師讀寫
+    match /sentence_owner_data/{d} {
+      allow read, write: if sdOwner();
+    }
+
     // ---- 造句小劇場 連線房間 ----
     match /sentence_rooms/{code} {
       function r() { return request.resource.data; }
