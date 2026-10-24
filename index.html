@@ -122,6 +122,11 @@ details.bk>summary{padding:8px 10px;cursor:pointer;font-weight:600;display:flex;
 .story{background:var(--panel);border:2px solid var(--line);border-radius:8px;padding:16px;text-align:center}
 .story .lab{font-size:12px;letter-spacing:.14em;color:var(--mute);margin-bottom:6px}
 .story .s{font-size:clamp(24px,5vw,38px);font-weight:700;line-height:1.4}
+.annchk{display:inline-flex;gap:12px;align-items:center;flex-wrap:wrap;margin-left:8px}
+.annchk label{display:inline-flex;gap:4px;align-items:center;cursor:pointer;font-size:14px}
+.story .ann{margin-top:8px;font-size:clamp(16px,3vw,22px);line-height:1.5}
+.story .ann.zy{letter-spacing:.04em;line-height:1.8;font-size:clamp(15px,2.6vw,20px)}
+.story .ann.tr{color:var(--mute);font-size:clamp(15px,2.6vw,19px)}
 .story .ask{margin-top:10px;color:var(--mute);font-size:15px}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:10px 16px;border-radius:6px;font-size:14px;z-index:9;max-width:90vw}
 .roombar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border:1.5px solid var(--line);border-radius:8px;background:var(--panel);padding:8px 12px;margin-bottom:12px}
@@ -155,6 +160,7 @@ const T = {
   fullLogin: ['登入', '登录'], fullOn: ['✓ 完整版', '✓ 完整版'], logout: ['登出', '登出'], offline: ['單機版', '单机版'],
   connFail: ['連線失敗，請檢查網路後再試', '连线失败，请检查网络后再试'],
   tabS: ['造句抽選', '造句抽选'], tabStory: ['編故事', '编故事'], tabSet: ['設定', '设置'], tabErr: ['常錯語法', '常错语法'],
+  annPy: ['拼音', '拼音'], annZy: ['注音', '注音'], annEs: ['西班牙文', '西班牙文'], annEn: ['英文', '英文'], transFail: ['翻譯暫時失敗，稍後取消再勾選一次試試', '翻译暂时失败，稍后取消再勾选一次试试'],
   errSearch: ['搜尋學生姓名…', '搜索学生姓名…'], stuMgr: ['學生管理', '学生管理'],
   stuLab: ['學生', '学生'], stuPh: ['輸入學生姓名', '输入学生姓名'], stuAdd: ['加入', '加入'], stuNone: ['（先加入學生姓名，才能記錄用錯的語法）', '（先加入学生姓名，才能记录用错的语法）'],
   errShort: ['✗ 用錯了', '✗ 用错了'], errShortOn: ['✓ 已記・取消', '✓ 已记・取消'],
@@ -211,7 +217,7 @@ const SC = () => (S.lang === 'sc' ? 1 : 0);
 const t = (k) => (T[k] ? T[k][SC()] : k);
 
 /* ================= 設定（存在這台裝置） ================= */
-const DEF = { lang: 'tc', books: [1], excluded: [], customs: [], imgsOff: [], showHints: true, storyTimer: 120, timerSel: 'd120', autoTimer: false, noRepeat: true, stus: [], stu: null, errs: {} };
+const DEF = { lang: 'tc', books: [1], excluded: [], customs: [], imgsOff: [], showHints: true, storyTimer: 120, timerSel: 'd120', autoTimer: false, noRepeat: true, stus: [], stu: null, errs: {}, ann: { py: false, zy: false, es: false, en: false } };
 function loadS() { try { return Object.assign({}, DEF, JSON.parse(localStorage.getItem(LS_KEY) || '{}')); } catch (e) { return Object.assign({}, DEF); } }
 let S = loadS();
 function saveS() { S.ts = Date.now(); try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) {} if (typeof cloudSoon === 'function') cloudSoon(); }
@@ -334,7 +340,7 @@ async function loadOwnerData() {
 }
 /* ---- 授權老師雲端同步：設定、學生、常錯紀錄、自訂語法點、自己上傳的圖片，登入後存在你的 Firebase（只有你的 Gmail 讀得到） ---- */
 const CLOUD = 'sentence_owner_data';
-const SYNC_KEYS = ['lang', 'books', 'excluded', 'customs', 'imgsOff', 'showHints', 'storyTimer', 'timerSel', 'autoTimer', 'noRepeat', 'stus', 'stu', 'errs', 'rangeInit', 'rangeBooks'];
+const SYNC_KEYS = ['lang', 'books', 'excluded', 'customs', 'imgsOff', 'showHints', 'storyTimer', 'timerSel', 'autoTimer', 'noRepeat', 'stus', 'stu', 'errs', 'rangeInit', 'rangeBooks', 'ann'];
 let cloudOK = false, cloudTm = null;
 function cloudSoon() { if (!cloudOK) return; clearTimeout(cloudTm); cloudTm = setTimeout(cloudPush, 1500); }
 async function cloudPush() {
@@ -629,13 +635,66 @@ function grammarList() {
     '<p class="note" style="text-align:center;margin:14px 0 4px">' + t('srcNote').replace('{r}', shownRange()).replace('{n}', SHOWN().length) + '</p>';
 }
 
+const ANN_KEYS = [['py', 'annPy'], ['zy', 'annZy'], ['es', 'annEs'], ['en', 'annEn']];
+function annChecks() {
+  const a = S.ann || {};
+  return '<span class="annchk">' + ANN_KEYS.map(([k, lb]) => '<label><input type="checkbox" data-a="ann" data-v="' + k + '"' + (a[k] ? ' checked' : '') + '> ' + t(lb) + '</label>').join('') + '</span>';
+}
+function annHtml(st) {
+  if (!st) return '';
+  const row = (k, c) => (typeof st[k] === 'string' && st[k] ? '<div class="ann ' + c + '">' + esc(st[k]) + '</div>' : '');
+  return row('py', 'py') + row('zy', 'zy') + row('es', 'tr') + row('en', 'tr');
+}
+/* ---- 句子下面的拼音、注音、翻譯（讀音用 messagewithpinyin 同一套台灣讀音＋GoodTeacher 規則；翻譯用 MyMemory 機器翻譯） ---- */
+let pyP = null;
+function loadPinyinEngine() {
+  if (typeof Engine !== 'undefined') return Promise.resolve();
+  if (pyP) return pyP;
+  pyP = (async () => { for (const f of ['gt-rules.js', 'lib-pinyin-pro.js', 'lib-t2cn.js', 'engine.js']) await loadScript('pinyin/' + f); })().catch((e) => { pyP = null; throw e; });
+  return pyP;
+}
+function pinyinLines(text, script) {
+  const { lines } = Engine.analyze(text, '', {});
+  const out = Engine.textOutput(lines, 'below', script).split('\n');
+  const res = [];
+  for (let i = 0; i < out.length; i++) { if (/\p{Script=Han}/u.test(out[i]) && i + 1 < out.length) { res.push(out[i + 1]); i++; } }
+  return res.join(' ');
+}
+const transCache = {};
+async function translate(text, to) {
+  const k = to + '|' + text; if (transCache[k]) return transCache[k];
+  const ctl = new AbortController(); const tm = setTimeout(() => ctl.abort(), 8000);
+  try {
+    const r = await fetch('https://api.mymemory.translated.net/get?q=' + encodeURIComponent(text) + '&langpair=zh-TW|' + to, { signal: ctl.signal });
+    const j = await r.json();
+    const v = j && j.responseData && j.responseData.translatedText;
+    if (!v || +j.responseStatus !== 200 || /MYMEMORY WARNING/i.test(v)) throw new Error('trans');
+    return (transCache[k] = v.slice(0, 500));
+  } finally { clearTimeout(tm); }
+}
+let annSeq = 0;
+async function annotateStory() {
+  if (!cur.story) return;
+  const my = ++annSeq, a = S.ann || {}, st = cur.story, tc = st.tc;
+  ['py', 'zy', 'es', 'en'].forEach((k) => { if (!a[k]) delete st[k]; });
+  let failed = false;
+  if (a.py || a.zy) { try { await loadPinyinEngine(); if (a.py) st.py = pinyinLines(tc, 'pinyin').slice(0, 600); if (a.zy) st.zy = pinyinLines(tc, 'zhuyin').slice(0, 600); } catch (e) { failed = true; } }
+  render(); push();
+  for (const [k, to] of [['es', 'es'], ['en', 'en']]) {
+    if (!a[k]) continue;
+    try { const v = await translate(tc, to); if (my !== annSeq || cur.story !== st) return; st[k] = v; } catch (e) { failed = true; }
+  }
+  if (my !== annSeq) return;
+  if (failed) toast(t('transFail'), 4000);
+  render(); push();
+}
 function teacherStory() {
   const isStory = cur.mode === 'story';
   const show = isStory && cur.story;
   return '<div class="sec"><h2>' + t('storyIn') + '</h2><textarea id="storyIn" placeholder="' + esc(t('storyPh')) + '"></textarea>' +
-    '<div class="row" style="margin-top:8px"><button class="btn primary" data-a="storygo">' + t('storyGo') + '</button><button class="btn" data-a="storyimg">' + t('storyImg') + '</button>' +
+    '<div class="row" style="margin-top:8px"><button class="btn primary" data-a="storygo">' + t('storyGo') + '</button><button class="btn" data-a="storyimg">' + t('storyImg') + '</button>' + annChecks() +
     '</div></div>' + (isStory ? timerPanel() : '') +
-    (isStory && cur.img ? '<div class="cards">' + imgCard(cur.img) + '<div class="story"><div class="lab">' + t('storyLab') + '</div><div class="s">' + esc(show ? (SC() ? cur.story.sc : cur.story.tc) : '—') + '</div><div class="ask">' + t('askStory') + '</div></div></div>' : '') +
+    (isStory && cur.img ? '<div class="cards">' + imgCard(cur.img) + '<div class="story"><div class="lab">' + t('storyLab') + '</div><div class="s">' + esc(show ? (SC() ? cur.story.sc : cur.story.tc) : '—') + '</div>' + (show ? annHtml(cur.story) : '') + '<div class="ask">' + t('askStory') + '</div></div></div>' : '') +
     (isStory ? hintsHtml() : '');
 }
 
@@ -726,7 +785,7 @@ function renderStudent() {
   if (!d || (!d.img && !d.story)) {
     body = '<div class="cards">' + '<div class="card img"><div class="lab">' + t('lblImg') + '</div><div class="empty">' + t('waitS') + '</div></div>' + gramCard(null, 'waitS') + '</div>';
   } else if (d.mode === 'story') {
-    body = '<div class="cards">' + imgCard(d.img, d) + '<div class="story"><div class="lab">' + t('storyLab') + '</div><div class="s">' + esc(d.story ? (SC() ? d.story.sc : d.story.tc) : '—') + '</div><div class="ask">' + t('askStory') + '</div></div></div>';
+    body = '<div class="cards">' + imgCard(d.img, d) + '<div class="story"><div class="lab">' + t('storyLab') + '</div><div class="s">' + esc(d.story ? (SC() ? d.story.sc : d.story.tc) : '—') + '</div>' + (d.story ? annHtml(d.story) : '') + '<div class="ask">' + t('askStory') + '</div></div></div>';
   } else {
     const g = d.g ? { title: SC() ? d.g.sc : d.g.tc, tag: d.g.custom ? t('custom') : (d.g.b ? t('book') + d.g.b + t('bookUnit') + '・' + (d.g.lv || '') + '・' + t('book') + d.g.l + t('lesson') : '') } : null;
     body = '<div class="cards">' + imgCard(d.img, d) + gramCard(g, d.img ? 'noG' : 'waitS') + '</div><p class="note" style="text-align:center;margin-top:12px;font-size:15px">' + t(d.g ? 'askSentence' : 'askImg') + '</p>';
@@ -835,6 +894,7 @@ function storyGo(onlyImg) {
   cur.tm = null; tmSet(null); cur.seq++;
   if (S.autoTimer) tmCmd('start', true);
   render(); push();
+  if (cur.story) { const a = S.ann || {}; if (a.py || a.zy || a.es || a.en) { if (v) ['py', 'zy', 'es', 'en'].forEach((k) => { delete cur.story[k]; }); annotateStory(); } }
 }
 // 計時指令：start（開始）、pause（暫停／繼續）、restart（重來）、stop（停止）。quiet=true 時不重畫、不上傳（呼叫的人自己會做）
 function tmCmd(what, quiet) {
@@ -965,6 +1025,7 @@ document.addEventListener('change', (e) => {
   else if (a === 'norepeat') { S.noRepeat = el.checked; saveS(); }
   else if (a === 'timersel') { S.timerSel = el.value; saveS(); }
   else if (a === 'tmauto') { S.autoTimer = el.checked; saveS(); }
+  else if (a === 'ann') { S.ann = Object.assign({ py: false, zy: false, es: false, en: false }, S.ann); S.ann[el.dataset.v] = el.checked; saveS(); if (cur.story) annotateStory(); }
 });
 function updateRange() {
   document.querySelectorAll('details.bk').forEach((d) => { const boxes = d.querySelectorAll('.plist input'); const on = Array.from(boxes).filter((b) => b.checked).length; const n = d.querySelector('summary .note'); if (n) n.textContent = on + '/' + boxes.length; });
