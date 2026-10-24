@@ -134,6 +134,7 @@ const T = {
   roomNo: ['輸入 4 位數房號', '输入 4 位数房号'], join: ['加入', '加入'],
   badRoom: ['找不到這個房間，請問老師房號', '找不到这个房间，请问老师房号'],
   expired: ['這個房間已經結束了', '这个房间已经结束了'],
+  loggingIn: ['登入中…（如果跳出視窗被擋，請允許彈出視窗）', '登录中…（如果弹出窗口被拦截，请允许弹出窗口）'],
   loginFail: ['登入沒有完成，請再試一次', '登录没有完成，请再试一次'],
   notOwner: ['連線功能僅限授權老師使用。單機版可以照常使用。', '连线功能仅限授权老师使用。单机版可以照常使用。'],
   fullLogin: ['授權老師登入', '授权老师登录'], fullOn: ['✓ 完整版', '✓ 完整版'], logout: ['登出', '登出'], offline: ['單機版', '单机版'],
@@ -296,6 +297,7 @@ async function ensureTeacherData() {
   teacherDataReady = true;
   loadUserImgs().then(() => { if (role === 'teacher' && UIMGS.length) render(); });
   if (LOCAL) await loadOwnerData();
+  else if (lsGet('sd_owner') !== '1') fb().catch(() => {});   /* 先連好，登入視窗才不會因為等太久被瀏覽器擋掉 */
   else if (lsGet('sd_owner') === '1') verifyOwner().then((ok) => { if (ok && role === 'teacher') render(); });
 }
 /* ---- 授權老師（只有你的 Gmail）：登入後才載入第 3–6 冊語法點和例句，並且才能開連線 ---- */
@@ -313,7 +315,7 @@ async function loadOwnerData() {
   owner = true;
 }
 async function checkOwner() {
-  try { const { F, db } = await fb(); await F.getDoc(F.doc(db, 'sentence_owner', 'me')); return true; } catch (e) { return false; }
+  try { const { F, db } = await fb(); await F.getDoc(F.doc(db, 'sentence_owner', 'me')); return true; } catch (e) { checkOwner.err = e.code || e.message || ''; return false; }
 }
 async function verifyOwner() {
   try {
@@ -325,10 +327,11 @@ async function verifyOwner() {
 }
 async function ownerLogin() {
   let x;
-  try { x = await fb(); } catch (e) { toast(t('connFail')); return false; }
+  toast(t('loggingIn'), 4000);
+  try { x = await fb(); } catch (e) { toast(t('connFail') + '（' + (e.code || e.message || e) + '）', 8000); console.error(e); return false; }
   try { await x.auth.authStateReady(); if (!x.auth.currentUser || x.auth.currentUser.isAnonymous) await x.Au.signInWithPopup(x.auth, new x.Au.GoogleAuthProvider()); }
-  catch (e) { toast(t('loginFail')); return false; }
-  if (!(await checkOwner())) { try { await x.Au.signOut(x.auth); } catch (e) {} lsSet('sd_owner', null); toast(t('notOwner'), 5000); return false; }
+  catch (e) { toast(t('loginFail') + '（' + (e.code || e.message || e) + '）', 8000); console.error(e); return false; }
+  if (!(await checkOwner())) { try { await x.Au.signOut(x.auth); } catch (e) {} lsSet('sd_owner', null); toast(t('notOwner') + '（' + (checkOwner.err || '') + '）', 8000); return false; }
   lsSet('sd_owner', '1'); await loadOwnerData(); return true;
 }
 async function ownerLogout() {
@@ -531,6 +534,7 @@ function grammarList() {
       '<div class="plist">' + list.map((p) => '<div class="pi" data-q="' + esc((p.t + ' ' + p.ts + ' ' + p.id).toLowerCase()) + '"><input type="checkbox" data-a="pt" data-v="' + p.id + '"' + (ex.has(p.id) ? '' : ' checked') + '><span class="id">' + p.id + '</span><span class="pf" data-a="force" data-v="' + p.id + '" title="' + esc(t('forceTip')) + '">' + esc(SC() ? p.ts : p.t) + '</span></div>').join('') + '</div></details>';
   }).join('');
   return '<div class="sec"><h2>' + t('setFine') + '</h2><div class="row" style="margin-bottom:6px"><input type="text" id="plSearch" placeholder="' + esc(t('search')) + '" style="flex:1"></div>' + fine + '</div>' +
+    customSec(true) +
     '<p class="note" style="text-align:center;margin:14px 0 4px">' + t('srcNote').replace('{r}', shownRange()).replace('{n}', SHOWN().length) + '</p>';
 }
 
@@ -594,10 +598,13 @@ function userImgsHtml() {
     '<div class="row"><label class="btn primary" for="uFile">' + t('uAdd') + '</label><input type="file" id="uFile" accept="image/*" multiple hidden></div>' +
     '<p class="note" style="margin:8px 0">' + t('uNote') + '</p>' + (rows ? '<div class="ulist">' + rows + '</div>' : '') + '</div>';
 }
+function customSec(forceable) {
+  const customs = S.customs.map((c) => '<div class="cust"><input type="checkbox" data-a="custon" data-v="' + c.id + '"' + (c.on ? ' checked' : '') + '><span class="t"' + (forceable ? ' data-a="force" data-v="' + c.id + '" style="cursor:pointer" title="' + esc(t('forceTip')) + '"' : '') + '>' + esc(SC() ? c.sc : c.tc) + (c.ex ? '<br><span class="note">' + esc(SC() ? (c.exs || c.ex) : c.ex) + '</span>' : '') + '</span><button class="btn small danger" data-a="custdel" data-v="' + c.id + '">' + t('del') + '</button></div>').join('');
+  return '<div class="sec"><h2>' + t('setCustom') + '</h2><div class="row"><input type="text" id="cTitle" placeholder="' + esc(t('cTitle')) + '" style="flex:1;min-width:200px"><input type="text" id="cEx" placeholder="' + esc(t('cEx')) + '" style="flex:1;min-width:200px"><button class="btn primary" data-a="custadd">' + t('add') + '</button></div>' + customs + '</div>';
+}
 function teacherSettings() {
-  const customs = S.customs.map((c) => '<div class="cust"><input type="checkbox" data-a="custon" data-v="' + c.id + '"' + (c.on ? ' checked' : '') + '><span class="t">' + esc(SC() ? c.sc : c.tc) + (c.ex ? '<br><span class="note">' + esc(SC() ? (c.exs || c.ex) : c.ex) + '</span>' : '') + '</span><button class="btn small danger" data-a="custdel" data-v="' + c.id + '">' + t('del') + '</button></div>').join('');
   const imgs = (window.SD_IMAGES || []).map((i) => '<label><img src="' + esc(i.src) + '" alt=""><span><input type="checkbox" data-a="img" data-v="' + i.id + '"' + (S.imgsOff.includes(i.id) ? '' : ' checked') + '>' + esc(SC() ? i.name.sc : i.name.tc) + '</span></label>').join('');
-  return     '<div class="sec"><h2>' + t('setCustom') + '</h2><div class="row"><input type="text" id="cTitle" placeholder="' + esc(t('cTitle')) + '" style="flex:1;min-width:200px"><input type="text" id="cEx" placeholder="' + esc(t('cEx')) + '" style="flex:1;min-width:200px"><button class="btn primary" data-a="custadd">' + t('add') + '</button></div>' + customs + '</div>' +
+  return     customSec(false) +
     userImgsHtml() +
     '<div class="sec"><h2>' + t('setImgs') + '</h2><div class="imgs">' + imgs + '</div></div>' +
     '<div class="sec"><h2>' + t('setOther') + '</h2><label class="row"><input type="checkbox" data-a="norepeat"' + (S.noRepeat ? ' checked' : '') + '> ' + t('noRepeat') + '</label></div>';
@@ -826,10 +833,10 @@ document.addEventListener('click', async (e) => {
       const ti = ($('#cTitle').value || '').trim(), ex = ($('#cEx').value || '').trim();
       if (!ti) break;
       const T2 = both(ti), E2 = ex ? both(ex) : null;
-      S.customs.push({ id: 'c' + Date.now(), tc: T2.tc, sc: T2.sc, ex: E2 ? E2.tc : '', exs: E2 ? E2.sc : '', on: true }); saveS(); render(); break;
+      S.customs.push({ id: 'c' + Date.now(), tc: T2.tc, sc: T2.sc, ex: E2 ? E2.tc : '', exs: E2 ? E2.sc : '', on: true }); saveS(); keepOpenRender(); break;
     }
     case 'udel': { if (confirm(t('del') + '？')) { UIMGS = UIMGS.filter((i) => i.id !== v); S.imgsOff = S.imgsOff.filter((x) => x !== v); saveS(); await idbDo('readwrite', (st) => st.delete(v)); render(); } break; }
-    case 'custdel': S.customs = S.customs.filter((c) => c.id !== v); saveS(); render(); break;
+    case 'custdel': S.customs = S.customs.filter((c) => c.id !== v); saveS(); keepOpenRender(); break;
   }
 });
 function addStu() {
