@@ -64,3 +64,11 @@
 | `hints.js` / `hints-b36.js` | 老師專用例句建議，同樣分兩份 |
 | `images/*.svg` | 100 張圖片卡（`tools/img/` 是畫圖的程式） |
 | `firestore-rules-sentence_rooms.txt` | 連線房間的 Firestore 規則 |
+
+## 手機瀏覽器備註：捲動後回不到頂端（2026-10-24）
+iPhone 版 Chrome 上，頁面可以捲動時，往下捲之後有時回不到最上面（Safari 正常）。
+處理方式（已套用在本遊戲）：
+- `<meta name="viewport">` 設 `maximum-scale=1`，不使用 `viewport-fit=cover`。
+- `<html>` 加 `html{color-scheme:light}`。
+
+兩項一起改後，手機 Chrome 測試恢復正常；尚未分開測是哪一項有效。新增頁面請照這個寫。
