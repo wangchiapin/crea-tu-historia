@@ -759,11 +759,18 @@ function customSec(forceable) {
   return '<div class="sec"><h2>' + t('setCustom') + '</h2><div class="row"><input type="text" id="cTitle" placeholder="' + esc(t('cTitle')) + '" style="flex:1;min-width:200px"><input type="text" id="cEx" placeholder="' + esc(t('cEx')) + '" style="flex:1;min-width:200px"><button class="btn primary" data-a="custadd">' + t('add') + '</button></div>' + customs + '</div>';
 }
 function teacherSettings() {
-  const imgs = (window.SD_IMAGES || []).map((i) => '<label><img src="' + esc(i.src) + '" alt=""><span><input type="checkbox" data-a="img" data-v="' + i.id + '"' + (S.imgsOff.includes(i.id) ? '' : ' checked') + '>' + esc(SC() ? i.name.sc : i.name.tc) + '</span></label>').join('');
+  const CATS = ['地點場所', '飲食', '動作活動', '天氣季節', '節日', '人物生活'], CAT_SC = { 地點場所: '地点场所', 飲食: '饮食', 動作活動: '动作活动', 天氣季節: '天气季节', 節日: '节日', 人物生活: '人物生活' };
+  const all = window.SD_IMAGES || [];
+  const imgs = CATS.map((c) => {
+    const list = all.filter((i) => (i.cat || '人物生活') === c); if (!list.length) return '';
+    const on = list.filter((i) => !S.imgsOff.includes(i.id)).length;
+    return '<details class="bk"><summary>' + (SC() ? CAT_SC[c] : c) + '　<span class="note">' + on + '/' + list.length + '</span><span style="margin-left:auto"></span><button class="btn small" data-a="imgall" data-v="' + c + '">' + t('allOn') + '</button><button class="btn small" data-a="imgnone" data-v="' + c + '">' + t('allOff') + '</button></summary><div class="imgs" style="margin-top:8px">' +
+      list.map((i) => '<label><img loading="lazy" src="' + esc(i.src) + '" alt=""><span><input type="checkbox" data-a="img" data-v="' + i.id + '"' + (S.imgsOff.includes(i.id) ? '' : ' checked') + '>' + esc(SC() ? i.name.sc : i.name.tc) + '</span></label>').join('') + '</div></details>';
+  }).join('');
   const stuSec = '<div class="sec"><h2>' + t('stuMgr') + '</h2>' + (S.stus.length ? S.stus.map((x) => '<div class="cust"><span class="t">' + esc(x.n) + '</span><button class="btn small danger" data-a="studel" data-v="' + x.id + '">' + t('delStu') + '</button></div>').join('') : '<p class="note" style="margin:0">' + t('stuNone') + '</p>') + '</div>';
   return     customSec(false) + stuSec +
     userImgsHtml() +
-    '<div class="sec"><h2>' + t('setImgs') + '</h2><div class="imgs">' + imgs + '</div></div>' +
+    '<div class="sec"><h2>' + t('setImgs') + '</h2>' + imgs + '</div>' +
     '<div class="sec"><h2>' + t('setOther') + '</h2><label class="row"><input type="checkbox" data-a="norepeat"' + (S.noRepeat ? ' checked' : '') + '> ' + t('noRepeat') + '</label></div>';
 }
 function applyErrFilter() {
@@ -989,6 +996,8 @@ document.addEventListener('click', async (e) => {
     case 'errdec': { const [sid, gid] = v.split('|'); const r = (S.errs[sid] || {})[gid]; if (r) errAdd(sid, { id: gid, tc: r.tc, sc: r.sc }, -1); render(); break; }
     case 'errdraw': { const [sid, gid] = v.split('|'); S.stu = sid; saveS(); tab = 'sentence'; drawSentence(false, gid); window.scrollTo({ top: 0 }); break; }
     case 'force': drawSentence(false, v); window.scrollTo({ top: 0, behavior: 'smooth' }); break;
+    case 'imgall': { const ids = (window.SD_IMAGES || []).filter((i) => (i.cat || '人物生活') === v).map((i) => i.id); S.imgsOff = S.imgsOff.filter((x) => !ids.includes(x)); saveS(); keepOpenRender(); break; }
+    case 'imgnone': { const ids = (window.SD_IMAGES || []).filter((i) => (i.cat || '人物生活') === v).map((i) => i.id); S.imgsOff = Array.from(new Set(S.imgsOff.concat(ids))); saveS(); keepOpenRender(); break; }
     case 'bookall': { const ids = G().points.filter((p) => p.b === +v).map((p) => p.id); S.excluded = S.excluded.filter((x) => !ids.includes(x)); saveS(); keepOpenRender(); break; }
     case 'booknone': { const ids = G().points.filter((p) => p.b === +v).map((p) => p.id); S.excluded = Array.from(new Set(S.excluded.concat(ids))); saveS(); keepOpenRender(); break; }
     case 'custadd': {
@@ -1028,7 +1037,7 @@ document.addEventListener('change', (e) => {
   else if (a === 'ann') { S.ann = Object.assign({ py: false, zy: false, es: false, en: false }, S.ann); S.ann[el.dataset.v] = el.checked; saveS(); if (cur.story) annotateStory(); }
 });
 function updateRange() {
-  document.querySelectorAll('details.bk').forEach((d) => { const boxes = d.querySelectorAll('.plist input'); const on = Array.from(boxes).filter((b) => b.checked).length; const n = d.querySelector('summary .note'); if (n) n.textContent = on + '/' + boxes.length; });
+  document.querySelectorAll('details.bk').forEach((d) => { const boxes = d.querySelectorAll('input[type=checkbox]'); const on = Array.from(boxes).filter((b) => b.checked).length; const n = d.querySelector('summary .note'); if (n) n.textContent = on + '/' + boxes.length; });
 }
 document.addEventListener('input', (e) => {
   if (e.target.id === 'plSearch') applyPlistFilter();

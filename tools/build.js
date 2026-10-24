@@ -4,13 +4,25 @@ const path = require('path');
 const OpenCC = require('opencc-js');
 const { IMAGES, ORDER, R } = require('./content-src.js');
 const { IMAGES2, TPL, H } = require('./content-src2.js');
-const IMAGES3 = ['c', 'd', 'e', 'f'].reduce((a, k) => { try { return a.concat(require('./data-' + k + '.js')); } catch (e) { if (e.code !== 'MODULE_NOT_FOUND') throw e; return a; } }, []);
+const IMAGES3 = ['c', 'd', 'e', 'f', 'g', 'h', 'i', 'j'].reduce((a, k) => { try { return a.concat(require('./data-' + k + '.js')); } catch (e) { if (e.code !== 'MODULE_NOT_FOUND') throw e; return a; } }, []);
 const ALL2 = IMAGES2.concat(IMAGES3);
 const toSC = OpenCC.Converter({ from: 'tw', to: 'cn' });
 const both = (s) => ({ tc: s, sc: toSC(s) });
 
+/* 分類（設定頁分組用）。新增圖片請在資料檔裡寫 cat，舊的 60 張記在這裡 */
+const CAT_OLD = {
+  地點場所: 'cafe park bookstore lake balcony seaside trail mrt nightmarket classroom market airport conveni busstop temple library postoffice supermarket kitchen bedroom livingroom desk doctor zoo pool camping crosswalk',
+  飲食: 'breakfast hotpot dumpling fruit bubbletea bakery restaurant tea',
+  動作活動: 'jogger phonecall basketball guitar laundry haircut clothes homework dogwalk fishing picnic bicycle luggage',
+  天氣季節: 'rain snow typhoon hotsun spring autumn rainbow stars',
+  節日: 'birthday midautumn newyear',
+  人物生活: 'cafe2',
+};
+const CAT = {}; Object.keys(CAT_OLD).forEach((c) => CAT_OLD[c].split(' ').forEach((id) => { CAT[id] = c; }));
+const CATS = ['地點場所', '飲食', '動作活動', '天氣季節', '節日', '人物生活'];
 const images = IMAGES.concat(ALL2).map((im) => ({
   id: im.id,
+  cat: im.cat || CAT[im.id] || '人物生活',
   src: im.src || ('images/' + im.id + '.svg'),
   name: both(im.name),
   words: im.words.map(both),
@@ -47,6 +59,8 @@ fs.writeFileSync(path.join(__dirname, '..', 'hints.js'), head + '// 老師專用
 fs.writeFileSync(path.join(__dirname, '..', 'hints-b36.js'), head + '// 老師專用：例句建議（第 3–6 冊），授權老師登入後才載入。\nwindow.SD_RULES_MORE=' + JSON.stringify(r36) + ';\n');
 console.log('hints rules', r12.length, '+', r36.length);
 console.log('images', images.length, 'rules', rules.length);
+const bad = images.filter((i) => !CATS.includes(i.cat)); if (bad.length) throw new Error('分類不對：' + bad.map((i) => i.id + '=' + i.cat).join(','));
+const cnt = {}; images.forEach((i) => { cnt[i.cat] = (cnt[i.cat] || 0) + 1; }); console.log(JSON.stringify(cnt));
 
 // 統計有多少語法點能配到建議
 window.GRAMMAR_LITE.points = ptsAll;
