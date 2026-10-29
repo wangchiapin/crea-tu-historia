@@ -4,12 +4,16 @@
 介面和語法點只有繁體／簡體（右上角切換）。
 
 - Firebase 專案：**memorma-24dab**（連線房間用，集合 `sentence_rooms`）
-- 語法點資料：《當代中文課程》Book 1–6 共 541 點，精簡自 `Generador-de-ejercicios` 的 `grammar-data.js`
+- 語法點資料：《當代中文課程》Book 1–6 共 541 點，精簡自 `Generador-de-ejercicios` 的 `grammar-data.js`（目前第 5、6 冊暫時隱藏，由 `index.html` 的 `HIDE_BOOKS` 控制，2026-10-23）
 
 ## 兩個玩法
 
 1. **造句抽選**：抽圖片＋語法點，學生造一個句子。老師端多一塊「老師專用」（例句建議、教材例句、圖片可用詞），學生端看不到。
 2. **編故事**：老師輸入一個句子，抽一張圖片，學生要想一個短故事並用到這個句子，
+
+## 常錯語法（2026-10-23）
+
+老師可建學生名單，抽選時把學生用錯的語法點標記起來，「常錯語法」分頁會列出，可再抽出來複習。授權老師（Google 登入）的設定、學生名單、常錯紀錄、自訂語法點和自己上傳的圖片會備份在自己的 Firebase 帳號下（只有該 Gmail 讀得到）。
 
 ## 計時
 
@@ -47,7 +51,7 @@
 
 ## 連線設定（第一次要做）
 
-1. 把 `firestore-rules-sentence_rooms.txt` 的內容貼進 memorma-24dab 的 Firestore 規則並發布（先把 `你的Gmail@gmail.com` 換成你的信箱）。
+1. 規則（`sentence_rooms`、`sentence_owner`）已在 game-kit（私人 repo）的 `firebase-rules/``memorma-24dab.rules.txt` 裡；要改規則先改那份，再整份貼進 memorma-24dab 的 Firestore 規則並發布。
 2. Firebase → Authentication → 開啟「Google」登入，已授權網域要有 `wangchiapin.github.io`。
 沒貼之前，「開啟連線」會失敗，單機模式不受影響。
 
@@ -63,7 +67,8 @@
 | `grammar-ex.js` | 教材例句（只有授權老師登入後才載入；公開版的語法點只有名稱） |
 | `hints.js` / `hints-b36.js` | 老師專用例句建議，同樣分兩份 |
 | `images/*.svg` | 100 張圖片卡（`tools/img/` 是畫圖的程式） |
-| `firestore-rules-sentence_rooms.txt` | 連線房間的 Firestore 規則 |
+| `pinyin/` | 編故事的拼音／注音（台灣讀音＋GoodTeacher 規則）用的程式與函式庫 |
+| `og.jpg` | 分享連結預覽縮圖（1200x630），貼到 LINE／WhatsApp 時顯示；名稱來自 `index.html` 的 `og:title`「造句小劇場 · Crea tu Historia」（2026-10-28 加入） |
 
 ## 手機瀏覽器備註：捲動後回不到頂端（2026-10-24）
 iPhone 版 Chrome 上，頁面可以捲動時，往下捲之後有時回不到最上面（Safari 正常）。
