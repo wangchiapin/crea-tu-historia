@@ -1088,9 +1088,25 @@ function wbBuild() {
   $('.wbt', wbEl).addEventListener('click', (e) => { const b = e.target.closest('[data-wb]'); if (b) wbCmd(b.dataset.wb, b.dataset.c); });
   $('.wbh button', wbEl).addEventListener('click', () => { wbOpen = false; wbSave(); render(); });
   ed.addEventListener('input', wbSaveSoon);
-  ed.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229 && wbAnn !== 'none') setTimeout(() => wbRefresh(false), 0); });
-  ed.addEventListener('mouseup', () => setTimeout(wbMaybeRefresh, 0));
-  ed.addEventListener('keyup', (e) => { if (/^(Arrow|Home|End|Page)/.test(e.key)) wbMaybeRefresh(); });
+  ed.addEventListener('keydown', (e) => {
+    if ((e.key === 'Home' || e.key === 'End') && wbAnn !== 'none' && !e.shiftKey && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      const sel = window.getSelection();
+      if (sel.rangeCount && sel.anchorNode !== ed && ed.contains(sel.anchorNode)) {
+        let n = sel.anchorNode; while (n && n.parentNode !== ed) n = n.parentNode;
+        if (n && n.nodeName === 'DIV' && n.querySelector('ruby')) { e.preventDefault(); wbPlace2(n, e.key === 'Home' ? 0 : n.textContent.replace(/\s/g, '').length + 9999); return; }
+      }
+    }
+    if ((e.key !== 'Backspace' && e.key !== 'Delete') || wbAnn === 'none' || e.isComposing) return;
+    const sel = window.getSelection();
+    if (!sel.rangeCount || !sel.isCollapsed || sel.anchorNode === ed || !ed.contains(sel.anchorNode)) return;
+    let n = sel.anchorNode; while (n && n.parentNode !== ed) n = n.parentNode;
+    if (!n || n.nodeName !== 'DIV' || !n.querySelector('ruby')) return;
+    const off = wbTextOff(n, sel.anchorNode, sel.anchorOffset);
+    wbStrip(n); wbPlace2(n, off);   // 先拿掉讀音再刪字，避免瀏覽器刪不動
+  });
+  ed.addEventListener('compositionstart', () => { wbComposing = true; });
+  ed.addEventListener('compositionend', () => { wbComposing = false; setTimeout(() => wbRefresh(false), 0); });
+  ed.addEventListener('input', (e) => { if (!e.isComposing && !wbComposing) setTimeout(() => wbRefresh(false), 0); });
   ed.addEventListener('blur', () => { if (wbAnn !== 'none') wbRefresh(true); });
   ed.addEventListener('paste', (e) => { e.preventDefault(); const tx = (e.clipboardData || window.clipboardData).getData('text/plain'); document.execCommand('insertText', false, tx); });
   ed.addEventListener('drop', (e) => { e.preventDefault(); const tx = e.dataTransfer.getData('text/plain'); if (tx) document.execCommand('insertText', false, tx); });
@@ -1170,45 +1186,44 @@ function wbTextOff(div, node, off) {
   walk(div); return n;
 }
 function wbPlace2(div, off) {
-  const w = document.createTreeWalker(div, NodeFilter.SHOW_TEXT); let n;
-  while ((n = w.nextNode())) { if (off <= n.length) { window.getSelection().collapse(n, off); return; } off -= n.length; }
-  window.getSelection().collapse(div, div.childNodes.length);
+  const w = document.createTreeWalker(div, NodeFilter.SHOW_TEXT), sel = window.getSelection(); let n;
+  while ((n = w.nextNode())) {
+    if (n.parentNode.closest('rt')) continue;
+    if (off <= n.length) {
+      const ru = n.parentNode.closest('ruby');
+      if (ru) { const at = Array.prototype.indexOf.call(ru.parentNode.childNodes, ru); sel.collapse(ru.parentNode, off === 0 ? at : at + 1); }
+      else sel.collapse(n, off);
+      return;
+    }
+    off -= n.length;
+  }
+  sel.collapse(div, div.childNodes.length);
 }
-let wbLastCaret = null;
-function wbCaretDiv() {
-  const ed = $('.wbe', wbEl), sel = window.getSelection();
-  if (!sel.rangeCount || !ed.contains(sel.anchorNode)) return null;
-  let n = sel.anchorNode; while (n && n.parentNode !== ed) n = n.parentNode; return n;
-}
-function wbMaybeRefresh() {
-  if (wbAnn === 'none') return;
-  const c = wbCaretDiv();
-  if (c !== wbLastCaret || (c && c.querySelector && c.querySelector('ruby'))) wbRefresh(false);
-}
+let wbComposing = false;
+// 重新標讀音：整塊白板每一行都標；輸入法還在選字時先不動
 function wbRefresh(all) {
   if (wbAnn === 'none' || !wbEl || typeof Engine === 'undefined') return;
+  if (wbComposing && !all) return;
   const ed = $('.wbe', wbEl), sel = window.getSelection();
   const inEd = sel.rangeCount && ed.contains(sel.anchorNode);
-  const keep = inEd ? [sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset] : null;
-  // 頂層零散的字和換行，先收進 div（一行一個 div）
+  if (inEd && !sel.isCollapsed && !all) return;
   let run = null;
   Array.from(ed.childNodes).forEach((n) => {
     if (n.nodeName === 'DIV') { run = null; return; }
     if (!run) { run = document.createElement('div'); ed.insertBefore(run, n); }
     run.appendChild(n);
   });
-  let caretDiv = null;
-  if (keep && !all) { let n = keep[0]; while (n && n.parentNode !== ed) n = n.parentNode; caretDiv = n; }
+  let caretDiv = null, off = 0;
+  if (inEd && sel.anchorNode !== ed) {
+    let n = sel.anchorNode; while (n && n.parentNode !== ed) n = n.parentNode;
+    if (n && n.nodeName === 'DIV') { caretDiv = n; off = wbTextOff(n, sel.anchorNode, sel.anchorOffset); }
+  }
   Array.from(ed.children).forEach((d) => {
-    if (d === caretDiv || d.nodeName !== 'DIV') return;
+    if (d.nodeName !== 'DIV') return;
     wbStrip(d);
     d.innerHTML = wbRuby(d.innerHTML, wbAnn === 'zy' ? 'zhuyin' : 'pinyin');
   });
-  wbLastCaret = caretDiv;
-  if (caretDiv && caretDiv.querySelector('ruby') && sel.isCollapsed) {
-    const off = wbTextOff(caretDiv, keep[0], keep[1]);
-    wbStrip(caretDiv); wbPlace2(caretDiv, off);
-  } else if (keep && ed.contains(keep[0]) && ed.contains(keep[2])) { try { sel.setBaseAndExtent(keep[0], keep[1], keep[2], keep[3]); } catch (e) {} }
+  if (caretDiv) wbPlace2(caretDiv, off);
 }
 let wbAnnSeq = 0;
 async function wbSetAnn(mode) {
