@@ -167,6 +167,17 @@ details.bk>summary{padding:8px 10px;cursor:pointer;font-weight:600;display:flex;
 .gdesc .dz{font-size:clamp(15px,2.6vw,19px);line-height:1.6}
 .gdesc .dt{color:var(--mute);font-size:clamp(13px,2.3vw,16px);line-height:1.5;margin-top:4px}
 .tmpanel .annchk{margin-left:6px;gap:10px}
+.wb{position:fixed;z-index:8;min-width:260px;min-height:180px;width:380px;height:300px;max-width:96vw;max-height:92vh;background:var(--panel);border:2px solid var(--line);border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,.28);display:flex;flex-direction:column;resize:both;overflow:hidden}
+.wb[hidden]{display:none}
+.wbh{display:flex;align-items:center;gap:8px;padding:6px 8px 6px 12px;background:var(--ink);color:var(--panel);cursor:move;touch-action:none;user-select:none;font-size:14px;letter-spacing:.1em}
+.wbh span{flex:1}
+.wbh button{background:transparent;border:1px solid var(--panel);color:var(--panel);border-radius:4px;padding:1px 8px;font-size:13px}
+.wbt{display:flex;flex-wrap:wrap;gap:4px;align-items:center;padding:6px 8px;border-bottom:1.5px solid var(--line);background:#efe9da}
+.wbt button{border:1.5px solid var(--line);background:var(--panel);border-radius:5px;padding:3px 9px;font-size:14px;min-width:30px;line-height:1.3}
+.wbt .sw{width:22px;min-width:22px;height:22px;padding:0;border-radius:50%}
+.wbt .sp{width:1px;align-self:stretch;background:var(--line);opacity:.35;margin:0 2px}
+.wbe{flex:1;overflow:auto;padding:10px 12px;font-size:20px;line-height:1.6;outline:none;background:#fffdf7;word-break:break-word}
+.wbe:empty:before{content:attr(data-ph);color:var(--mute)}
 .story .ask{margin-top:10px;color:var(--mute);font-size:15px}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:10px 16px;border-radius:6px;font-size:14px;z-index:9;max-width:90vw}
 .roombar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border:1.5px solid var(--line);border-radius:8px;background:var(--panel);padding:8px 12px;margin-bottom:12px}
@@ -212,6 +223,8 @@ const T = {
   annDe: ['說明', '说明'], annPy: ['拼音', '拼音'], annZy: ['注音', '注音'], annEs: ['西班牙文', '西班牙文'], annEn: ['英文', '英文'], transFail: ['翻譯暫時失敗，稍後取消再勾選一次試試', '翻译暂时失败，稍后取消再勾选一次试试'],
   errSearch: ['搜尋學生姓名…', '搜寻学生姓名…'], stuMgr: ['學生管理', '学生管理'],
   stuLab: ['學生', '学生'], stuPh: ['輸入學生姓名', '输入学生姓名'], stuAdd: ['加入', '加入'], stuNone: ['（先加入學生姓名，才能記錄用錯的語法）', '（先加入学生姓名，才能记录用错的语法）'],
+  wbBtn: ['白板', '白板'], wbBold: ['粗體', '粗体'], wbItalic: ['斜體', '斜体'], wbUnder: ['底線', '底线'], wbStrike: ['刪除線', '删除线'], wbHl: ['底色', '底色'], wbNoHl: ['無底色', '无底色'],
+  wbCopy: ['複製', '复制'], wbClear: ['清除', '清除'], wbClose: ['關閉', '关闭'], wbCopied: ['已複製白板內容', '已复制白板内容'], wbAsk: ['要清除白板上所有內容嗎？', '要清除白板上所有内容吗？'], wbPh: ['在這裡打字…', '在这里打字…'],
   errShort: ['✗ 用錯了', '✗ 用错了'], errShortOn: ['✓ 已記・取消', '✓ 已记・取消'],
   errMark: ['✗ 用錯了，記到常錯語法', '✗ 用错了，记到常错语法'], errDone: ['✓ 已記到', '✓ 已记到'], errUndo: ['（再按一次取消）', '（再按一次取消）'], pickStu: ['請先點選上方的學生姓名', '请先点选上方的学生姓名'],
   errEmpty: ['還沒有紀錄。抽選時按「用錯了」就會記在這裡。', '还没有记录。抽选时按「用错了」就会记在这里。'], errAgain: ['再抽它', '再抽它'], delStu: ['刪除學生', '删除学生'], errNote: ['紀錄只存在這台裝置的瀏覽器裡。', '记录只存在这台装置的浏览器里。'], errCnt: ['次', '次'],
@@ -518,9 +531,9 @@ function langBtn() { return '<button class="chip" data-a="lang">' + (S.lang === 
 function render() {
   document.documentElement.lang = S.lang === 'sc' ? 'zh-Hans' : 'zh-Hant';
   document.title = t('title');
-  if (!role) return renderHome();
-  if (role === 'teacher') return renderTeacher();
-  return renderStudent();
+  const r = !role ? renderHome() : role === 'teacher' ? renderTeacher() : renderStudent();
+  wbSync();
+  return r;
 }
 
 /* ---------- 首頁 ---------- */
@@ -649,7 +662,7 @@ function teacherSentence() {
 function stuRow() {
   const chips = S.stus.map((x) => '<button class="chip' + (S.stu === x.id ? ' on' : '') + '" data-a="stu" data-v="' + x.id + '">' + esc(x.n) + '</button>').join('');
   return '<div class="sec stu"><div class="row"><span class="note">' + t('stuLab') + '</span>' + chips +
-    '<input type="text" id="stuIn" placeholder="' + esc(t('stuPh')) + '" title="' + esc(t('stuNone')) + '"><button class="btn small" data-a="stuadd">' + t('stuAdd') + '</button>' + errMini() + '</div></div>';
+    '<input type="text" id="stuIn" placeholder="' + esc(t('stuPh')) + '" title="' + esc(t('stuNone')) + '"><button class="btn small" data-a="stuadd">' + t('stuAdd') + '</button>' + errMini() + '<span class="vsep"></span><button class="btn small keep' + (wbOpen ? ' primary' : '') + '" data-a="wb">' + t('wbBtn') + '</button></div></div>';
 }
 function stuName(id) { const x = S.stus.find((y) => y.id === id); return x ? x.n : ''; }
 let marked = null;
@@ -1035,6 +1048,87 @@ async function joinRoom(code) {
 function leaveStudent() { if (sUnsub) { try { sUnsub(); } catch (e) {} sUnsub = null; } sState = null; sCode = null; sErr = ''; role = null; tmSet(null); render(); }
 
 /* ================= 事件 ================= */
+
+/* ================= 白板（只有老師看；內容存在這台裝置） ================= */
+let wbOpen = false, wbEl = null;
+const WB_KEY = 'sd_wb';
+const WB_COLORS = ['#fff59d', '#c8e6c9', '#f8bbd0', '#bbdefb'];
+function wbLoad() { try { return JSON.parse(localStorage.getItem(WB_KEY) || '{}'); } catch (e) { return {}; } }
+function wbSave() {
+  if (!wbEl) return;
+  const r = wbEl.getBoundingClientRect();
+  try { localStorage.setItem(WB_KEY, JSON.stringify({ html: $('.wbe', wbEl).innerHTML, x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height), open: wbOpen })); } catch (e) {}
+}
+let wbTimer = null;
+const wbSaveSoon = () => { clearTimeout(wbTimer); wbTimer = setTimeout(wbSave, 400); };
+function wbBuild() {
+  const sv = wbLoad();
+  wbEl = document.createElement('div'); wbEl.className = 'wb'; wbEl.hidden = true;
+  wbEl.innerHTML = '<div class="wbh"><span data-k="wbBtn"></span><button data-wb="close" data-k="wbClose"></button></div>' +
+    '<div class="wbt">' +
+    '<button data-wb="bold" data-k="wbBold"><b>B</b></button><button data-wb="italic" data-k="wbItalic"><i>I</i></button><button data-wb="underline" data-k="wbUnder"><u>U</u></button><button data-wb="strikeThrough" data-k="wbStrike"><s>S</s></button>' +
+    '<span class="sp"></span>' + WB_COLORS.map((c) => '<button class="sw" data-wb="hl" data-c="' + c + '" data-k="wbHl" style="background:' + c + '"></button>').join('') + '<button data-wb="hl" data-c="transparent" data-k="wbNoHl"></button>' +
+    '<span class="sp"></span><button data-wb="copy" data-k="wbCopy"></button><button data-wb="clear" data-k="wbClear"></button></div>' +
+    '<div class="wbe" contenteditable="true" spellcheck="false"></div>';
+  document.body.appendChild(wbEl);
+  const ed = $('.wbe', wbEl);
+  if (sv.html) ed.innerHTML = sv.html;
+  const W = window.innerWidth, H = window.innerHeight;
+  const w = Math.min(sv.w || 380, W - 16), h = Math.min(sv.h || 300, H - 16);
+  wbEl.style.width = w + 'px'; wbEl.style.height = h + 'px';
+  wbPlace(sv.x != null ? sv.x : W - w - 24, sv.y != null ? sv.y : 120);
+  // 工具列按下去不要搶走選取的文字
+  $('.wbt', wbEl).addEventListener('mousedown', (e) => { if (e.target.closest('button')) e.preventDefault(); });
+  $('.wbt', wbEl).addEventListener('click', (e) => { const b = e.target.closest('[data-wb]'); if (b) wbCmd(b.dataset.wb, b.dataset.c); });
+  $('.wbh button', wbEl).addEventListener('click', () => { wbOpen = false; wbSave(); render(); });
+  ed.addEventListener('input', wbSaveSoon);
+  ed.addEventListener('paste', (e) => { e.preventDefault(); const tx = (e.clipboardData || window.clipboardData).getData('text/plain'); document.execCommand('insertText', false, tx); });
+  ed.addEventListener('drop', (e) => { e.preventDefault(); const tx = e.dataTransfer.getData('text/plain'); if (tx) document.execCommand('insertText', false, tx); });
+  // 拖曳標題列移動
+  const hd = $('.wbh', wbEl); let drag = null;
+  hd.addEventListener('pointerdown', (e) => { if (e.target.closest('button')) return; const r = wbEl.getBoundingClientRect(); drag = { dx: e.clientX - r.left, dy: e.clientY - r.top }; hd.setPointerCapture(e.pointerId); });
+  hd.addEventListener('pointermove', (e) => { if (drag) wbPlace(e.clientX - drag.dx, e.clientY - drag.dy); });
+  hd.addEventListener('pointerup', () => { if (drag) { drag = null; wbSave(); } });
+  new ResizeObserver(wbSaveSoon).observe(wbEl);
+  window.addEventListener('resize', () => { const r = wbEl.getBoundingClientRect(); wbPlace(r.left, r.top); });
+}
+function wbPlace(x, y) {
+  const W = window.innerWidth, H = window.innerHeight, r = wbEl.getBoundingClientRect();
+  wbEl.style.left = Math.max(0, Math.min(x, W - Math.min(r.width || 200, W))) + 'px';
+  wbEl.style.top = Math.max(0, Math.min(y, H - 40)) + 'px';
+}
+function wbCmd(c, color) {
+  const ed = $('.wbe', wbEl);
+  if (c === 'close') return;
+  if (c === 'clear') { if (!confirm(t('wbAsk'))) return; ed.innerHTML = ''; wbSave(); ed.focus(); return; }
+  if (c === 'copy') { wbCopy(); return; }
+  ed.focus();
+  document.execCommand('styleWithCSS', false, true);
+  if (c === 'hl') document.execCommand('hiliteColor', false, color);
+  else document.execCommand(c, false, null);
+  wbSave();
+}
+async function wbCopy() {
+  const ed = $('.wbe', wbEl), html = ed.innerHTML, text = ed.innerText;
+  try {
+    await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }), 'text/plain': new Blob([text], { type: 'text/plain' }) })]);
+  } catch (e) {
+    const sel = window.getSelection(), keep = sel.rangeCount ? sel.getRangeAt(0).cloneRange() : null;
+    const rg = document.createRange(); rg.selectNodeContents(ed); sel.removeAllRanges(); sel.addRange(rg);
+    try { document.execCommand('copy'); } catch (e2) {}
+    sel.removeAllRanges(); if (keep) sel.addRange(keep);
+  }
+  toast(t('wbCopied'));
+}
+const WB_TEXT = ['wbNoHl', 'wbClear', 'wbCopy', 'wbClose', 'wbBtn'];
+function wbSync() {
+  if (role === 'teacher' && wbOpen && !wbEl) wbBuild();
+  if (!wbEl) return;
+  wbEl.hidden = !(role === 'teacher' && wbOpen);
+  wbEl.querySelectorAll('[data-k]').forEach((n) => { const k = n.dataset.k, v = t(k); n.title = v; if (WB_TEXT.includes(k)) n.textContent = v; });
+  $('.wbe', wbEl).dataset.ph = t('wbPh');
+}
+
 document.addEventListener('click', async (e) => {
   const el = e.target.closest('[data-a]'); if (!el) return;
   const a = el.dataset.a, v = el.dataset.v;
@@ -1044,6 +1138,7 @@ document.addEventListener('click', async (e) => {
     case 'teacher': role = 'teacher'; tab = 'sentence'; render(); break;
     case 'student': $('#joinBox').classList.remove('hide'); $('#joinIn').focus(); break;
     case 'join': { const c = ($('#joinIn').value || '').trim(); if (!/^\d{4}$/.test(c)) { $('#joinErr').textContent = t('badRoom'); break; } joinRoom(c); break; }
+    case 'wb': wbOpen = !wbOpen; wbSave(); render(); if (wbOpen && wbEl) $('.wbe', wbEl).focus(); break;
     case 'home': if (room) { if (!confirm(t('endRoom') + '？')) break; await endRoom(); } role = null; cur = { mode: 'sentence', img: null, g: null, story: null, tm: null, seq: 0 }; tmSet(null); render(); break;
     case 'leave': leaveStudent(); break;
     case 'tab': if (tab === 'story') storyText(); tab = v; render(); break;
@@ -1127,7 +1222,7 @@ document.addEventListener('input', (e) => {
 document.addEventListener('keydown', (e) => {
   if (e.target.id === 'stuIn' && e.key === 'Enter') { addStu(); return; }
   if (e.target.id === 'joinIn' && e.key === 'Enter') { const c = e.target.value.trim(); if (/^\d{4}$/.test(c)) joinRoom(c); else $('#joinErr').textContent = t('badRoom'); return; }
-  if (role === 'teacher' && tab === 'sentence' && (e.key === ' ' || e.key === 'Enter') && !/INPUT|TEXTAREA|SELECT|BUTTON|SUMMARY/.test(e.target.tagName)) { e.preventDefault(); drawSentence(); }
+  if (role === 'teacher' && tab === 'sentence' && (e.key === ' ' || e.key === 'Enter') && !e.target.isContentEditable && !/INPUT|TEXTAREA|SELECT|BUTTON|SUMMARY/.test(e.target.tagName)) { e.preventDefault(); drawSentence(); }
 });
 window.addEventListener('beforeunload', () => { if (room && !LOCAL) { /* 房間 6 小時後會自動過期 */ } });
 
