@@ -1197,7 +1197,8 @@ function wbPlace2(div, off) {
     }
     off -= n.length;
   }
-  sel.collapse(div, div.childNodes.length);
+  const last = div.lastChild;
+  sel.collapse(div, last && last.nodeName === 'BR' ? div.childNodes.length - 1 : div.childNodes.length);
 }
 let wbComposing = false;
 // 重新標讀音：整塊白板每一行都標；輸入法還在選字時先不動
