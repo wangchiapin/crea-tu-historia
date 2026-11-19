@@ -869,7 +869,7 @@ function renderStudent() {
   } else if (d.mode === 'story') {
     body = '<div class="cards">' + imgCard(d.img, d) + '<div class="story">' + (d.story ? '' : '<div class="lab">' + t('storyLab') + '</div>') + '<div class="s">' + esc(d.story ? (SC() ? d.story.sc : d.story.tc) : '—') + '</div>' + (d.story ? annHtml(d.story) : '<div class="ask">' + t('askStory') + '</div>') + '</div></div>';
   } else {
-    const g = d.g ? { ann: d.gAnn || null, title: SC() ? d.g.sc : d.g.tc, tag: d.g.custom ? t('custom') : (d.g.b ? t('book') + d.g.b + t('bookUnit') + '・' + (d.g.lv || '') + '・' + t('book') + d.g.l + t('lesson') : '') } : null;
+    const g = d.g ? { ann: d.g.ann || null, title: SC() ? d.g.sc : d.g.tc, tag: d.g.custom ? t('custom') : (d.g.b ? t('book') + d.g.b + t('bookUnit') + '・' + (d.g.lv || '') + '・' + t('book') + d.g.l + t('lesson') : '') } : null;
     body = '<div class="cards">' + imgCard(d.img, d) + gramCard(g, d.img ? 'noG' : 'waitS') + '</div><p class="note" style="text-align:center;margin-top:12px;font-size:15px">' + t(d.g ? 'askSentence' : 'askImg') + '</p>';
   }
   app.innerHTML = top + (d && (d.img || d.story) ? timerBox() : '') + body;
@@ -906,8 +906,8 @@ function roomDoc() {
   const um = cur.img && String(cur.img).startsWith('u_') ? UIMGS.find((i) => i.id === cur.img) : null;
   return {
     mode: cur.mode, img: cur.img || null, ia: um ? um.src : null, inm: um ? { tc: um.name.tc, sc: um.name.sc } : null,
-    g: cur.g ? { tc: cur.g.tc, sc: cur.g.sc, b: cur.g.tagB || 0, l: cur.g.tagL || 0, lv: cur.g.tagB ? levelOf(cur.g.tagB) : '', custom: !!cur.g.custom } : null,
-    story: cur.story || null, gAnn: cur.g && cur.gAnn ? cur.gAnn : null, tm: cur.tm || null, seq: cur.seq,
+    g: cur.g ? { tc: cur.g.tc, sc: cur.g.sc, b: cur.g.tagB || 0, l: cur.g.tagL || 0, lv: cur.g.tagB ? levelOf(cur.g.tagB) : '', custom: !!cur.g.custom, ann: cur.gAnn || null } : null,
+    story: cur.story || null, tm: cur.tm || null, seq: cur.seq,
   };
 }
 async function push() {
