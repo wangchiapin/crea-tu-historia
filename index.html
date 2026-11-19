@@ -61,6 +61,7 @@ button{font:inherit;color:inherit;cursor:pointer}
   .ctl:not(.more) .tmpanel .timer{font-size:20px;padding:0 6px}
   .moreb{display:inline-block}
   .ctl:not(.more) .tmpanel .row>*:not(.btn):not(.timer){display:none}
+  .ctl:not(.more) .tmpanel .annchk{display:none}
   .ctl:not(.more) .stu .row>*{display:none}
   .ctl:not(.more) .stu .row>.keep,.ctl:not(.more) .stu .row>.chip.on{display:inline-block}
   .ctl .tmpanel,.ctl .stu{padding:4px 5px}
@@ -159,6 +160,13 @@ details.bk>summary{padding:8px 10px;cursor:pointer;font-weight:600;display:flex;
 .story .ann{margin-top:8px;font-size:clamp(16px,3vw,22px);line-height:1.5}
 .story .ann.zy{letter-spacing:.04em;line-height:1.8;font-size:clamp(15px,2.6vw,20px)}
 .story .ann.tr{color:var(--mute);font-size:clamp(15px,2.6vw,19px)}
+.card.gram .ann{font-size:clamp(15px,2.6vw,20px);line-height:1.5}
+.card.gram .ann.zy{letter-spacing:.04em;line-height:1.8}
+.card.gram .ann.tr{color:var(--mute);font-size:clamp(14px,2.4vw,18px)}
+.gdesc{margin-top:6px;padding-top:10px;border-top:1px dashed var(--mute);text-align:left;max-width:34em;margin-left:auto;margin-right:auto}
+.gdesc .dz{font-size:clamp(15px,2.6vw,19px);line-height:1.6}
+.gdesc .dt{color:var(--mute);font-size:clamp(13px,2.3vw,16px);line-height:1.5;margin-top:4px}
+.tmpanel .annchk{margin-left:6px;gap:10px}
 .story .ask{margin-top:10px;color:var(--mute);font-size:15px}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:10px 16px;border-radius:6px;font-size:14px;z-index:9;max-width:90vw}
 .roombar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border:1.5px solid var(--line);border-radius:8px;background:var(--panel);padding:8px 12px;margin-bottom:12px}
@@ -201,7 +209,7 @@ const T = {
   fullLogin: ['登入', '登入'], fullOn: ['✓ 完整版', '✓ 完整版'], logout: ['登出', '登出'], offline: ['單機版', '单机版'],
   connFail: ['連線失敗，請檢查網路後再試', '连线失败，请检查网路后再试'],
   tabS: ['造句抽選', '造句抽选'], tabStory: ['編故事', '编故事'], tabSet: ['設定', '设定'], tabErr: ['常錯語法', '常错语法'],
-  annPy: ['拼音', '拼音'], annZy: ['注音', '注音'], annEs: ['西班牙文', '西班牙文'], annEn: ['英文', '英文'], transFail: ['翻譯暫時失敗，稍後取消再勾選一次試試', '翻译暂时失败，稍后取消再勾选一次试试'],
+  annDe: ['說明', '说明'], annPy: ['拼音', '拼音'], annZy: ['注音', '注音'], annEs: ['西班牙文', '西班牙文'], annEn: ['英文', '英文'], transFail: ['翻譯暫時失敗，稍後取消再勾選一次試試', '翻译暂时失败，稍后取消再勾选一次试试'],
   errSearch: ['搜尋學生姓名…', '搜寻学生姓名…'], stuMgr: ['學生管理', '学生管理'],
   stuLab: ['學生', '学生'], stuPh: ['輸入學生姓名', '输入学生姓名'], stuAdd: ['加入', '加入'], stuNone: ['（先加入學生姓名，才能記錄用錯的語法）', '（先加入学生姓名，才能记录用错的语法）'],
   errShort: ['✗ 用錯了', '✗ 用错了'], errShortOn: ['✓ 已記・取消', '✓ 已记・取消'],
@@ -258,7 +266,7 @@ const SC = () => (S.lang === 'sc' ? 1 : 0);
 const t = (k) => (T[k] ? T[k][SC()] : k);
 
 /* ================= 設定（存在這台裝置） ================= */
-const DEF = { lang: 'tc', books: [1], excluded: [], customs: [], imgsOff: [], showHints: true, storyTimer: 120, timerSel: 'd120', autoTimer: false, noRepeat: true, stus: [], stu: null, errs: {}, ann: { py: false, zy: false, es: false, en: false } };
+const DEF = { lang: 'tc', books: [1], excluded: [], customs: [], imgsOff: [], showHints: true, storyTimer: 120, timerSel: 'd120', autoTimer: false, noRepeat: true, stus: [], stu: null, errs: {}, ann: { py: false, zy: false, es: false, en: false, de: false } };
 function loadS() { try { return Object.assign({}, DEF, JSON.parse(localStorage.getItem(LS_KEY) || '{}')); } catch (e) { return Object.assign({}, DEF); } }
 let S = loadS();
 function saveS() { S.ts = Date.now(); try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch (e) {} if (typeof cloudSoon === 'function') cloudSoon(); }
@@ -357,7 +365,7 @@ const G = () => window.GRAMMAR_LITE;
 function loadScript(src) { return new Promise((res, rej) => { const s = document.createElement('script'); s.src = src; s.onload = res; s.onerror = () => rej(new Error('load ' + src)); document.head.appendChild(s); }); }
 async function ensureTeacherData() {
   if (teacherDataReady) return;
-  await Promise.all([loadScript('grammar-b12.js'), loadScript('hints.js')]);
+  await Promise.all([loadScript('grammar-b12.js'), loadScript('hints.js'), loadScript('grammar-desc-b12.js').catch(() => {})]);
   window.SD_RULEX = (window.SD_RULES || []).map((r) => ({ re: new RegExp(r.re), s: r.s }));
   teacherDataReady = true;
   const imgsLoaded = loadUserImgs().then(() => { if (role === 'teacher' && UIMGS.length) render(); });
@@ -371,7 +379,7 @@ const lsGet = (k) => { try { return localStorage.getItem(k); } catch (e) { retur
 const lsSet = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (e) {} };
 async function loadOwnerData() {
   if (owner) return;
-  await Promise.all([loadScript('grammar-b36.js'), loadScript('hints-b36.js'), loadScript('grammar-ex.js')]);
+  await Promise.all([loadScript('grammar-b36.js'), loadScript('hints-b36.js'), loadScript('grammar-ex.js'), loadScript('grammar-desc-b36.js').catch(() => {})]);
   const M = window.GRAMMAR_MORE;
   window.GRAMMAR_LITE.points.forEach((p) => { if (window.GRAMMAR_EX[p.id]) p.ex = window.GRAMMAR_EX[p.id]; });
   window.GRAMMAR_LITE.points = window.GRAMMAR_LITE.points.concat(M.points);
@@ -538,7 +546,15 @@ function imgCard(imgId, sd) {
 }
 function gramCard(g, waitKey) {
   if (!g) return '<div class="card gram"><div class="lab">' + t('lblGram') + '</div><div class="body"><div class="empty">' + t(waitKey) + '</div></div></div>';
-  return '<div class="card gram"><div class="lab">' + t('lblGram') + '</div><div class="body"><div class="gtitle">' + esc(g.title) + '</div></div></div>';
+  return '<div class="card gram"><div class="lab">' + t('lblGram') + '</div><div class="body"><div class="gtitle">' + esc(g.title) + '</div>' + gAnnHtml(g.ann) + '</div></div>';
+}
+function gAnnHtml(a) {
+  if (!a) return '';
+  const row = (k, c) => (typeof a[k] === 'string' && a[k] ? '<div class="ann ' + c + '">' + esc(a[k]) + '</div>' : '');
+  const lastSeg = (x) => String(x || '').split(' / ').pop();
+  let h = row('py', 'py') + row('zy', 'zy') + (a.es ? '<div class="ann tr">' + esc(a.es) + '</div>' : '') + (a.en ? '<div class="ann tr">' + esc(lastSeg(a.en)) + '</div>' : '');
+  if (a.de) h += '<div class="gdesc"><div class="dz">' + esc(SC() ? a.de.sc : a.de.tc) + '</div>' + (a.des ? '<div class="dt">' + esc(a.des) + '</div>' : '') + (a.den ? '<div class="dt">' + esc(a.den) + '</div>' : '') + '</div>';
+  return h;
 }
 function fmtT(sec) { return String(Math.floor(sec / 60)).padStart(2, '0') + ':' + String(sec % 60).padStart(2, '0'); }
 function timerBox() {
@@ -548,7 +564,7 @@ function timerBox() {
 }
 const TM_OPTS = [['d30', 30], ['d60', 60], ['d120', 120], ['d180', 180], ['d300', 300]];
 function tmOptLabel(o) { return o[1] >= 60 ? t('tmDown') + ' ' + o[1] / 60 + ' ' + t('min') : t('tmDown') + ' ' + o[1] + ' ' + t('secU'); }
-function timerPanel() {
+function timerPanel(withAnn) {
   const sel = S.timerSel || 'd120';
   const opts = [['off', t('timerOff')]].concat(TM_OPTS.map((o) => [o[0], tmOptLabel(o)])).concat([['u', t('tmUp')]])
     .map((o) => '<option value="' + o[0] + '"' + (sel === o[0] ? ' selected' : '') + '>' + o[1] + '</option>').join('');
@@ -557,7 +573,7 @@ function timerPanel() {
     ? '<button class="btn" data-a="tmstart">' + t('tmStart') + '</button>'
     : (done ? '' : '<button class="btn" data-a="tmpause">' + (running ? t('tmPause') : t('tmResume') ) + '</button>') + '<button class="btn" data-a="tmrestart">' + t('tmRestart') + '</button><button class="btn" data-a="timerstop">' + t('timerStop') + '</button>';
   return '<div class="sec tmpanel"><div class="row"><span class="note">' + t('timerLab') + '</span><select id="timerSel" data-a="timersel">' + opts + '</select>' + btns +
-    '<label class="note"><input type="checkbox" data-a="tmauto"' + (S.autoTimer ? ' checked' : '') + '>' + t('tmAuto') + '</label></div>' + timerBox() + '</div>';
+    '<label class="note"><input type="checkbox" data-a="tmauto"' + (S.autoTimer ? ' checked' : '') + '>' + t('tmAuto') + '</label></div>' + timerBox() + (withAnn ? annChecks(true) : '') + '</div>';
 }
 
 /* ---------- 老師 ---------- */
@@ -570,7 +586,7 @@ function roomBar() {
   const acct = LOCAL ? '' : (owner ? '<span class="pill live">' + t('fullOn') + '</span><button class="btn small" data-a="ologout">' + t('logout') + '</button>' : '<button class="btn small" data-a="ologin">' + t('fullLogin') + '</button>');
   return '<span class="roomin">' + acct + '<span class="pill" title="' + esc(t('netOffer')) + '">' + t('online') + '</span>' + (roomBusy ? '<span class="note">' + t('creating') + '</span>' : '') + '<button class="btn small primary" data-a="openroom"' + (roomBusy ? ' disabled' : '') + '>' + t('openRoom') + '</button></span>';
 }
-function curG() { return cur.g ? { title: gText(cur.g), tag: gTag(cur.g) } : null; }
+function curG() { return cur.g ? { title: gText(cur.g), tag: gTag(cur.g), ann: cur.gAnn || null } : null; }
 
 function hintsHtml() {
   if (!S.showHints) {
@@ -624,7 +640,7 @@ function teacherSentence() {
     '<button class="btn" data-a="drawimg"' + (rolling ? ' disabled' : '') + '>' + t('drawImg') + '</button>' +
     '<button class="btn moreb' + (ctlMore ? ' primary' : '') + '" data-a="ctlmore">⋯</button>' +
     '</div>' + stuRow() +
-    timerPanel() + '</div>' +
+    timerPanel(true) + '</div>' +
     '<div class="cards' + (rolling ? ' rolling' : '') + '" id="cards">' + (img ? imgCard(img) : '<div class="card img"><div class="lab">' + t('lblImg') + '</div><div class="empty">' + t('waitT') + '</div></div>') + gramCard(g, img ? 'noG' : 'waitT') + '</div>' +
     (cur.mode === 'sentence' && cur.img ? '<p class="note" style="text-align:center;margin:10px 0 0">' + t(cur.g ? 'askSentence' : 'askImg') + '</p>' : '') +
     (cur.mode === 'sentence' ? hintsHtml() : '') + grammarList();
@@ -679,9 +695,9 @@ function grammarList() {
 }
 
 const ANN_KEYS = [['py', 'annPy'], ['zy', 'annZy'], ['es', 'annEs'], ['en', 'annEn']];
-function annChecks() {
+function annChecks(withDe) {
   const a = S.ann || {};
-  return '<span class="annchk">' + ANN_KEYS.map(([k, lb]) => '<label><input type="checkbox" data-a="ann" data-v="' + k + '"' + (a[k] ? ' checked' : '') + '> ' + t(lb) + '</label>').join('') + '</span>';
+  return '<span class="annchk">' + (withDe ? ANN_KEYS.concat([['de', 'annDe']]) : ANN_KEYS).map(([k, lb]) => '<label><input type="checkbox" data-a="ann" data-v="' + k + '"' + (a[k] ? ' checked' : '') + '> ' + t(lb) + '</label>').join('') + '</span>';
 }
 function annHtml(st) {
   if (!st) return '';
@@ -731,6 +747,21 @@ async function annotateStory() {
   if (failed) toast(t('transFail'), 4000);
   render(); push();
 }
+async function annotateGram() {
+  const g = cur.g; if (cur.mode !== 'sentence' || !g) return;
+  const my = ++gAnnSeq, a = S.ann || {};
+  if (!(a.py || a.zy || a.es || a.en || a.de)) { cur.gAnn = null; render(); push(); return; }
+  const row = (window.GDESC || {})[g.id], A = {};
+  if ((a.py || a.zy)) { try { await loadPinyinEngine(); if (my !== gAnnSeq || cur.g !== g) return; if (a.py) A.py = pinyinLines(g.tc, 'pinyin').slice(0, 300); if (a.zy) A.zy = pinyinLines(g.tc, 'zhuyin').slice(0, 300); } catch (e) { toast(t('transFail'), 3000); } }
+  if (row) {
+    if (a.es && row[0]) A.es = row[0];
+    if (a.en && row[1]) A.en = SC() && row[2] ? row[2] : row[1];
+    if (a.de && row[3]) { A.de = { tc: row[3], sc: row[4] || row[3] }; if (a.es && row[5]) A.des = row[5]; if (a.en && row[6]) A.den = row[6]; }
+  }
+  if (my !== gAnnSeq || cur.g !== g) return;
+  cur.gAnn = A; render(); push();
+}
+let gAnnSeq = 0;
 function teacherStory() {
   const isStory = cur.mode === 'story';
   const show = isStory && cur.story;
@@ -837,7 +868,7 @@ function renderStudent() {
   } else if (d.mode === 'story') {
     body = '<div class="cards">' + imgCard(d.img, d) + '<div class="story">' + (d.story ? '' : '<div class="lab">' + t('storyLab') + '</div>') + '<div class="s">' + esc(d.story ? (SC() ? d.story.sc : d.story.tc) : '—') + '</div>' + (d.story ? annHtml(d.story) : '<div class="ask">' + t('askStory') + '</div>') + '</div></div>';
   } else {
-    const g = d.g ? { title: SC() ? d.g.sc : d.g.tc, tag: d.g.custom ? t('custom') : (d.g.b ? t('book') + d.g.b + t('bookUnit') + '・' + (d.g.lv || '') + '・' + t('book') + d.g.l + t('lesson') : '') } : null;
+    const g = d.g ? { ann: d.gAnn || null, title: SC() ? d.g.sc : d.g.tc, tag: d.g.custom ? t('custom') : (d.g.b ? t('book') + d.g.b + t('bookUnit') + '・' + (d.g.lv || '') + '・' + t('book') + d.g.l + t('lesson') : '') } : null;
     body = '<div class="cards">' + imgCard(d.img, d) + gramCard(g, d.img ? 'noG' : 'waitS') + '</div><p class="note" style="text-align:center;margin-top:12px;font-size:15px">' + t(d.g ? 'askSentence' : 'askImg') + '</p>';
   }
   app.innerHTML = top + (d && (d.img || d.story) ? timerBox() : '') + body;
@@ -875,7 +906,7 @@ function roomDoc() {
   return {
     mode: cur.mode, img: cur.img || null, ia: um ? um.src : null, inm: um ? { tc: um.name.tc, sc: um.name.sc } : null,
     g: cur.g ? { tc: cur.g.tc, sc: cur.g.sc, b: cur.g.tagB || 0, l: cur.g.tagL || 0, lv: cur.g.tagB ? levelOf(cur.g.tagB) : '', custom: !!cur.g.custom } : null,
-    story: cur.story || null, tm: cur.tm || null, seq: cur.seq,
+    story: cur.story || null, gAnn: cur.g && cur.gAnn ? cur.gAnn : null, tm: cur.tm || null, seq: cur.seq,
   };
 }
 async function push() {
@@ -923,11 +954,12 @@ function drawSentence(imgOnly, forceId) {
     if (n >= 11) {
       clearInterval(tick);
       rolling = false;
-      cur.img = nxt.im.id; cur.g = nxt.g; cur.seq++;
+      cur.img = nxt.im.id; cur.g = nxt.g; cur.gAnn = null; cur.seq++;
       if (nxt.g) usedG.add(nxt.g.id);
       lastImg = nxt.im.id;
       if (S.autoTimer) tmCmd('start', true);
       render(); push();
+      annotateGram();
     }
   }, 75);
 }
@@ -1078,7 +1110,7 @@ document.addEventListener('change', (e) => {
   else if (a === 'norepeat') { S.noRepeat = el.checked; saveS(); }
   else if (a === 'timersel') { S.timerSel = el.value; saveS(); }
   else if (a === 'tmauto') { S.autoTimer = el.checked; saveS(); }
-  else if (a === 'ann') { S.ann = Object.assign({ py: false, zy: false, es: false, en: false }, S.ann); S.ann[el.dataset.v] = el.checked; saveS(); if (cur.story) annotateStory(); }
+  else if (a === 'ann') { S.ann = Object.assign({ py: false, zy: false, es: false, en: false }, S.ann); S.ann[el.dataset.v] = el.checked; saveS(); if (cur.story) annotateStory(); if (cur.g && cur.mode === 'sentence') annotateGram(); }
 });
 function updateRange() {
   document.querySelectorAll('details.bk').forEach((d) => { const boxes = d.querySelectorAll('input[type=checkbox]'); const on = Array.from(boxes).filter((b) => b.checked).length; const n = d.querySelector('summary .note'); if (n) n.textContent = on + '/' + boxes.length; });
