@@ -178,6 +178,11 @@ details.bk>summary{padding:8px 10px;cursor:pointer;font-weight:600;display:flex;
 .wbt .sp{width:1px;align-self:stretch;background:var(--line);opacity:.35;margin:0 2px}
 .wbe{flex:1;overflow:auto;padding:10px 12px;font-size:20px;line-height:1.6;outline:none;background:#fffdf7;word-break:break-word}
 .wbe:empty:before{content:attr(data-ph);color:var(--mute)}
+.wbt button.on{background:var(--ink);color:var(--panel)}
+.wbe ruby{ruby-align:center}
+.wbe rt{font-size:.5em;color:#5a5348;letter-spacing:0;font-weight:400;font-style:normal;text-decoration:none}
+.wb[data-ann=py] .wbe,.wb[data-ann=zy] .wbe{line-height:2.4}
+.wbe rt{user-select:none;pointer-events:none}
 .story .ask{margin-top:10px;color:var(--mute);font-size:15px}
 .toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--ink);color:var(--panel);padding:10px 16px;border-radius:6px;font-size:14px;z-index:9;max-width:90vw}
 .roombar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border:1.5px solid var(--line);border-radius:8px;background:var(--panel);padding:8px 12px;margin-bottom:12px}
@@ -223,7 +228,7 @@ const T = {
   annDe: ['說明', '说明'], annPy: ['拼音', '拼音'], annZy: ['注音', '注音'], annEs: ['西班牙文', '西班牙文'], annEn: ['英文', '英文'], transFail: ['翻譯暫時失敗，稍後取消再勾選一次試試', '翻译暂时失败，稍后取消再勾选一次试试'],
   errSearch: ['搜尋學生姓名…', '搜寻学生姓名…'], stuMgr: ['學生管理', '学生管理'],
   stuLab: ['學生', '学生'], stuPh: ['輸入學生姓名', '输入学生姓名'], stuAdd: ['加入', '加入'], stuNone: ['（先加入學生姓名，才能記錄用錯的語法）', '（先加入学生姓名，才能记录用错的语法）'],
-  wbBtn: ['白板', '白板'], wbBold: ['粗體', '粗体'], wbItalic: ['斜體', '斜体'], wbUnder: ['底線', '底线'], wbStrike: ['刪除線', '删除线'], wbHl: ['底色', '底色'], wbNoHl: ['無底色', '无底色'],
+  wbBtn: ['白板', '白板'], wbAnnNone: ['不標讀音', '不标读音'], wbAnnWait: ['讀音載入中…', '读音载入中…'], wbAnnFail: ['讀音載入失敗，請稍後再試', '读音载入失败，请稍后再试'], wbAnnView: ['標讀音時不能打字，切回「不標讀音」才能編輯', '标读音时不能打字，切回“不标读音”才能编辑'], wbBold: ['粗體', '粗体'], wbItalic: ['斜體', '斜体'], wbUnder: ['底線', '底线'], wbStrike: ['刪除線', '删除线'], wbHl: ['底色', '底色'], wbNoHl: ['無底色', '无底色'],
   wbCopy: ['複製', '复制'], wbClear: ['清除', '清除'], wbClose: ['關閉', '关闭'], wbCopied: ['已複製白板內容', '已复制白板内容'], wbAsk: ['要清除白板上所有內容嗎？', '要清除白板上所有内容吗？'], wbPh: ['在這裡打字…', '在这里打字…'],
   errShort: ['✗ 用錯了', '✗ 用错了'], errShortOn: ['✓ 已記・取消', '✓ 已记・取消'],
   errMark: ['✗ 用錯了，記到常錯語法', '✗ 用错了，记到常错语法'], errDone: ['✓ 已記到', '✓ 已记到'], errUndo: ['（再按一次取消）', '（再按一次取消）'], pickStu: ['請先點選上方的學生姓名', '请先点选上方的学生姓名'],
@@ -1050,14 +1055,14 @@ function leaveStudent() { if (sUnsub) { try { sUnsub(); } catch (e) {} sUnsub = 
 /* ================= 事件 ================= */
 
 /* ================= 白板（只有老師看；內容存在這台裝置） ================= */
-let wbOpen = false, wbEl = null;
+let wbOpen = false, wbEl = null, wbAnn = 'none';
 const WB_KEY = 'sd_wb';
 const WB_COLORS = ['#fff59d', '#c8e6c9', '#f8bbd0', '#bbdefb'];
 function wbLoad() { try { return JSON.parse(localStorage.getItem(WB_KEY) || '{}'); } catch (e) { return {}; } }
 function wbSave() {
   if (!wbEl) return;
   const r = wbEl.getBoundingClientRect();
-  try { localStorage.setItem(WB_KEY, JSON.stringify({ html: $('.wbe', wbEl).innerHTML, x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height), open: wbOpen })); } catch (e) {}
+  try { localStorage.setItem(WB_KEY, JSON.stringify({ html: wbBaseHtml(), x: Math.round(r.left), y: Math.round(r.top), w: Math.round(r.width), h: Math.round(r.height), open: wbOpen })); } catch (e) {}
 }
 let wbTimer = null;
 const wbSaveSoon = () => { clearTimeout(wbTimer); wbTimer = setTimeout(wbSave, 400); };
@@ -1066,8 +1071,9 @@ function wbBuild() {
   wbEl = document.createElement('div'); wbEl.className = 'wb'; wbEl.hidden = true;
   wbEl.innerHTML = '<div class="wbh"><span data-k="wbBtn"></span><button data-wb="close" data-k="wbClose"></button></div>' +
     '<div class="wbt">' +
-    '<button data-wb="bold" data-k="wbBold"><b>B</b></button><button data-wb="italic" data-k="wbItalic"><i>I</i></button><button data-wb="underline" data-k="wbUnder"><u>U</u></button><button data-wb="strikeThrough" data-k="wbStrike"><s>S</s></button>' +
-    '<span class="sp"></span>' + WB_COLORS.map((c) => '<button class="sw" data-wb="hl" data-c="' + c + '" data-k="wbHl" style="background:' + c + '"></button>').join('') + '<button data-wb="hl" data-c="transparent" data-k="wbNoHl"></button>' +
+    '<button class="fmt" data-wb="bold" data-k="wbBold"><b>B</b></button><button class="fmt" data-wb="italic" data-k="wbItalic"><i>I</i></button><button class="fmt" data-wb="underline" data-k="wbUnder"><u>U</u></button><button class="fmt" data-wb="strikeThrough" data-k="wbStrike"><s>S</s></button>' +
+    '<span class="sp"></span>' + WB_COLORS.map((c) => '<button class="sw fmt" data-wb="hl" data-c="' + c + '" data-k="wbHl" style="background:' + c + '"></button>').join('') + '<button class="fmt" data-wb="hl" data-c="transparent" data-k="wbNoHl"></button>' +
+    '<span class="sp"></span><button data-wb="ann:none" data-k="wbAnnNone" class="on"></button><button data-wb="ann:py" data-k="annPy"></button><button data-wb="ann:zy" data-k="annZy"></button>' +
     '<span class="sp"></span><button data-wb="copy" data-k="wbCopy"></button><button data-wb="clear" data-k="wbClear"></button></div>' +
     '<div class="wbe" contenteditable="true" spellcheck="false"></div>';
   document.body.appendChild(wbEl);
@@ -1082,6 +1088,10 @@ function wbBuild() {
   $('.wbt', wbEl).addEventListener('click', (e) => { const b = e.target.closest('[data-wb]'); if (b) wbCmd(b.dataset.wb, b.dataset.c); });
   $('.wbh button', wbEl).addEventListener('click', () => { wbOpen = false; wbSave(); render(); });
   ed.addEventListener('input', wbSaveSoon);
+  ed.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing && e.keyCode !== 229 && wbAnn !== 'none') setTimeout(() => wbRefresh(false), 0); });
+  ed.addEventListener('mouseup', () => setTimeout(wbMaybeRefresh, 0));
+  ed.addEventListener('keyup', (e) => { if (/^(Arrow|Home|End|Page)/.test(e.key)) wbMaybeRefresh(); });
+  ed.addEventListener('blur', () => { if (wbAnn !== 'none') wbRefresh(true); });
   ed.addEventListener('paste', (e) => { e.preventDefault(); const tx = (e.clipboardData || window.clipboardData).getData('text/plain'); document.execCommand('insertText', false, tx); });
   ed.addEventListener('drop', (e) => { e.preventDefault(); const tx = e.dataTransfer.getData('text/plain'); if (tx) document.execCommand('insertText', false, tx); });
   // 拖曳標題列移動
@@ -1100,6 +1110,7 @@ function wbPlace(x, y) {
 function wbCmd(c, color) {
   const ed = $('.wbe', wbEl);
   if (c === 'close') return;
+  if (c.startsWith('ann:')) { wbSetAnn(c.slice(4)); return; }
   if (c === 'clear') { if (!confirm(t('wbAsk'))) return; ed.innerHTML = ''; wbSave(); ed.focus(); return; }
   if (c === 'copy') { wbCopy(); return; }
   ed.focus();
@@ -1108,8 +1119,114 @@ function wbCmd(c, color) {
   else document.execCommand(c, false, null);
   wbSave();
 }
+function wbRuby(baseHtml, script) {
+  const box = document.createElement('div'); box.innerHTML = baseHtml;
+  const w = document.createTreeWalker(box, NodeFilter.SHOW_TEXT), nodes = [];
+  let n; while ((n = w.nextNode())) nodes.push(n);
+  nodes.forEach((node) => {
+    if (!/\p{Script=Han}/u.test(node.data)) return;
+    const frag = document.createDocumentFragment();
+    Engine.analyze(node.data, '', {}).lines.forEach((units, li) => {
+      if (li) frag.appendChild(document.createTextNode('\n'));
+      units.forEach((u) => {
+        if (u.kind === 'han' && u.py) {
+          const z = script === 'zhuyin' ? Engine.toZhuyin(u.py) : null;
+          const ru = document.createElement('ruby'); ru.appendChild(document.createTextNode(u.text));
+          const rt = document.createElement('rt'); rt.contentEditable = 'false'; rt.textContent = z ? z.text : u.py; ru.appendChild(rt);
+          frag.appendChild(ru);
+        } else frag.appendChild(document.createTextNode(u.text));
+      });
+    });
+    node.parentNode.replaceChild(frag, node);
+  });
+  return box.innerHTML;
+}
+function wbStrip(root) {
+  root.querySelectorAll('rt').forEach((r) => r.remove());
+  root.querySelectorAll('ruby').forEach((r) => { while (r.firstChild) r.parentNode.insertBefore(r.firstChild, r); r.remove(); });
+  root.normalize();
+}
+function wbBaseHtml() {
+  const b = document.createElement('div'); b.innerHTML = $('.wbe', wbEl).innerHTML; wbStrip(b); return b.innerHTML;
+}
+function wbBaseText() {
+  const b = document.createElement('div'); b.innerHTML = wbBaseHtml();
+  b.style.cssText = 'position:fixed;left:-9999px;white-space:pre-wrap'; document.body.appendChild(b);
+  const tx = b.innerText; b.remove(); return tx;
+}
+// 重新標讀音：每一行（頂層 div）都標，只有游標正在打的那一行先不動（all=true 時全部都標）
+function wbTextOff(div, node, off) {
+  let n = 0, found = false;
+  const walk = (el) => {
+    for (const c of Array.from(el.childNodes)) {
+      if (found) return;
+      if (c.nodeName === 'RT') continue;
+      if (c === node && c.nodeType === 3) { n += off; found = true; return; }
+      if (c.nodeType === 3) n += c.length;
+      else { if (c === node) { for (let i = 0; i < off; i++) { const k = c.childNodes[i]; if (k && k.nodeName !== 'RT') n += k.textContent.length; } found = true; return; } walk(c); }
+    }
+  };
+  if (node === div) { for (let i = 0; i < off; i++) { const k = div.childNodes[i]; if (k && k.nodeName !== 'RT') n += k.textContent.length; } return n; }
+  walk(div); return n;
+}
+function wbPlace2(div, off) {
+  const w = document.createTreeWalker(div, NodeFilter.SHOW_TEXT); let n;
+  while ((n = w.nextNode())) { if (off <= n.length) { window.getSelection().collapse(n, off); return; } off -= n.length; }
+  window.getSelection().collapse(div, div.childNodes.length);
+}
+let wbLastCaret = null;
+function wbCaretDiv() {
+  const ed = $('.wbe', wbEl), sel = window.getSelection();
+  if (!sel.rangeCount || !ed.contains(sel.anchorNode)) return null;
+  let n = sel.anchorNode; while (n && n.parentNode !== ed) n = n.parentNode; return n;
+}
+function wbMaybeRefresh() {
+  if (wbAnn === 'none') return;
+  const c = wbCaretDiv();
+  if (c !== wbLastCaret || (c && c.querySelector && c.querySelector('ruby'))) wbRefresh(false);
+}
+function wbRefresh(all) {
+  if (wbAnn === 'none' || !wbEl || typeof Engine === 'undefined') return;
+  const ed = $('.wbe', wbEl), sel = window.getSelection();
+  const inEd = sel.rangeCount && ed.contains(sel.anchorNode);
+  const keep = inEd ? [sel.anchorNode, sel.anchorOffset, sel.focusNode, sel.focusOffset] : null;
+  // 頂層零散的字和換行，先收進 div（一行一個 div）
+  let run = null;
+  Array.from(ed.childNodes).forEach((n) => {
+    if (n.nodeName === 'DIV') { run = null; return; }
+    if (!run) { run = document.createElement('div'); ed.insertBefore(run, n); }
+    run.appendChild(n);
+  });
+  let caretDiv = null;
+  if (keep && !all) { let n = keep[0]; while (n && n.parentNode !== ed) n = n.parentNode; caretDiv = n; }
+  Array.from(ed.children).forEach((d) => {
+    if (d === caretDiv || d.nodeName !== 'DIV') return;
+    wbStrip(d);
+    d.innerHTML = wbRuby(d.innerHTML, wbAnn === 'zy' ? 'zhuyin' : 'pinyin');
+  });
+  wbLastCaret = caretDiv;
+  if (caretDiv && caretDiv.querySelector('ruby') && sel.isCollapsed) {
+    const off = wbTextOff(caretDiv, keep[0], keep[1]);
+    wbStrip(caretDiv); wbPlace2(caretDiv, off);
+  } else if (keep && ed.contains(keep[0]) && ed.contains(keep[2])) { try { sel.setBaseAndExtent(keep[0], keep[1], keep[2], keep[3]); } catch (e) {} }
+}
+let wbAnnSeq = 0;
+async function wbSetAnn(mode) {
+  const ed = $('.wbe', wbEl), my = ++wbAnnSeq;
+  if (mode === wbAnn) return;
+  if (mode !== 'none') {
+    try { await loadPinyinEngine(); } catch (e) { toast(t('wbAnnFail')); return; }
+    if (my !== wbAnnSeq) return;
+    wbAnn = mode; wbRefresh(true);
+  } else {
+    const base = wbBaseHtml(); ed.innerHTML = base; wbAnn = 'none';
+  }
+  wbEl.dataset.ann = mode;
+  wbEl.querySelectorAll('[data-wb^="ann:"]').forEach((b) => b.classList.toggle('on', b.dataset.wb === 'ann:' + mode));
+  wbSave();
+}
 async function wbCopy() {
-  const ed = $('.wbe', wbEl), html = ed.innerHTML, text = ed.innerText;
+  const ed = $('.wbe', wbEl), html = wbBaseHtml(), text = wbBaseText();
   try {
     await navigator.clipboard.write([new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }), 'text/plain': new Blob([text], { type: 'text/plain' }) })]);
   } catch (e) {
@@ -1120,7 +1237,7 @@ async function wbCopy() {
   }
   toast(t('wbCopied'));
 }
-const WB_TEXT = ['wbNoHl', 'wbClear', 'wbCopy', 'wbClose', 'wbBtn'];
+const WB_TEXT = ['wbAnnNone', 'annPy', 'annZy', 'wbNoHl', 'wbClear', 'wbCopy', 'wbClose', 'wbBtn'];
 function wbSync() {
   if (role === 'teacher' && wbOpen && !wbEl) wbBuild();
   if (!wbEl) return;
