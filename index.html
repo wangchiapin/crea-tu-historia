@@ -1104,10 +1104,11 @@ function wbBuild() {
     const off = wbTextOff(n, sel.anchorNode, sel.anchorOffset);
     wbStrip(n); wbPlace2(n, off);   // 先拿掉讀音再刪字，避免瀏覽器刪不動
   });
-  ed.addEventListener('compositionstart', () => { wbComposing = true; });
-  ed.addEventListener('compositionend', () => { wbComposing = false; setTimeout(() => wbRefresh(false), 0); });
-  ed.addEventListener('input', (e) => { if (!e.isComposing && !wbComposing) setTimeout(() => wbRefresh(false), 0); });
-  ed.addEventListener('blur', () => { if (wbAnn !== 'none') wbRefresh(true); });
+  // 標讀音要等你停手半秒才做，打字（含注音確認、標點、空白）當中不動內容，避免輸入法和游標被換掉
+  ed.addEventListener('compositionstart', () => { wbComposing = true; clearTimeout(wbRefTimer); });
+  ed.addEventListener('compositionend', () => { wbComposing = false; wbRefreshSoon(); });
+  ed.addEventListener('input', () => { if (wbAnn !== 'none') wbRefreshSoon(); });
+  ed.addEventListener('blur', () => { clearTimeout(wbRefTimer); if (wbAnn !== 'none') wbRefresh(true); });
   ed.addEventListener('paste', (e) => { e.preventDefault(); const tx = (e.clipboardData || window.clipboardData).getData('text/plain'); document.execCommand('insertText', false, tx); });
   ed.addEventListener('drop', (e) => { e.preventDefault(); const tx = e.dataTransfer.getData('text/plain'); if (tx) document.execCommand('insertText', false, tx); });
   // 拖曳標題列移動
@@ -1150,7 +1151,7 @@ function wbRuby(baseHtml, script) {
           const ru = document.createElement('ruby'); ru.appendChild(document.createTextNode(u.text));
           const rt = document.createElement('rt'); rt.contentEditable = 'false'; rt.textContent = z ? z.text : u.py; ru.appendChild(rt);
           frag.appendChild(ru);
-        } else frag.appendChild(document.createTextNode(u.text));
+        } else frag.appendChild(document.createTextNode(u.kind === 'space' ? '\u00a0' : u.text));
       });
     });
     node.parentNode.replaceChild(frag, node);
@@ -1168,9 +1169,10 @@ function wbBaseHtml() {
 function wbBaseText() {
   const b = document.createElement('div'); b.innerHTML = wbBaseHtml();
   b.style.cssText = 'position:fixed;left:-9999px;white-space:pre-wrap'; document.body.appendChild(b);
-  const tx = b.innerText; b.remove(); return tx;
+  const tx = b.innerText.replace(/\u00a0/g, ' '); b.remove(); return tx;
 }
 // 重新標讀音：每一行（頂層 div）都標，只有游標正在打的那一行先不動（all=true 時全部都標）
+function wbLen(k) { if (k.nodeType === 3) return k.length; if (k.nodeName === 'RT') return 0; let n = 0; k.childNodes.forEach((c) => { n += wbLen(c); }); return n; }
 function wbTextOff(div, node, off) {
   let n = 0, found = false;
   const walk = (el) => {
@@ -1179,10 +1181,10 @@ function wbTextOff(div, node, off) {
       if (c.nodeName === 'RT') continue;
       if (c === node && c.nodeType === 3) { n += off; found = true; return; }
       if (c.nodeType === 3) n += c.length;
-      else { if (c === node) { for (let i = 0; i < off; i++) { const k = c.childNodes[i]; if (k && k.nodeName !== 'RT') n += k.textContent.length; } found = true; return; } walk(c); }
+      else { if (c === node) { for (let i = 0; i < off; i++) { const k = c.childNodes[i]; if (k) n += wbLen(k); } found = true; return; } walk(c); }
     }
   };
-  if (node === div) { for (let i = 0; i < off; i++) { const k = div.childNodes[i]; if (k && k.nodeName !== 'RT') n += k.textContent.length; } return n; }
+  if (node === div) { for (let i = 0; i < off; i++) { const k = div.childNodes[i]; if (k) n += wbLen(k); } return n; }
   walk(div); return n;
 }
 function wbPlace2(div, off) {
@@ -1200,7 +1202,8 @@ function wbPlace2(div, off) {
   const last = div.lastChild;
   sel.collapse(div, last && last.nodeName === 'BR' ? div.childNodes.length - 1 : div.childNodes.length);
 }
-let wbComposing = false;
+let wbComposing = false, wbRefTimer = null;
+function wbRefreshSoon() { clearTimeout(wbRefTimer); wbRefTimer = setTimeout(() => wbRefresh(false), 600); }
 // 重新標讀音：整塊白板每一行都標；輸入法還在選字時先不動
 function wbRefresh(all) {
   if (wbAnn === 'none' || !wbEl || typeof Engine === 'undefined') return;
@@ -1208,14 +1211,17 @@ function wbRefresh(all) {
   const ed = $('.wbe', wbEl), sel = window.getSelection();
   const inEd = sel.rangeCount && ed.contains(sel.anchorNode);
   if (inEd && !sel.isCollapsed && !all) return;
+  const sn = inEd ? sel.anchorNode : null, so = inEd ? sel.anchorOffset : 0;
   let run = null;
   Array.from(ed.childNodes).forEach((n) => {
     if (n.nodeName === 'DIV') { run = null; return; }
     if (!run) { run = document.createElement('div'); ed.insertBefore(run, n); }
     run.appendChild(n);
   });
+  if (sn && sn !== ed && ed.contains(sn)) sel.collapse(sn, so);   // 包進一行時游標不要被擠掉
+  else if (sn === ed) { const pv = ed.childNodes[so - 1] || ed.childNodes[so]; if (pv && pv.nodeName === 'DIV') sel.collapse(pv, pv.childNodes.length); }
   let caretDiv = null, off = 0;
-  if (inEd && sel.anchorNode !== ed) {
+  if (inEd && sel.rangeCount && sel.anchorNode !== ed && ed.contains(sel.anchorNode)) {
     let n = sel.anchorNode; while (n && n.parentNode !== ed) n = n.parentNode;
     if (n && n.nodeName === 'DIV') { caretDiv = n; off = wbTextOff(n, sel.anchorNode, sel.anchorOffset); }
   }
